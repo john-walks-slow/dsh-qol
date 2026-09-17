@@ -1,0 +1,15 @@
+# awesome-dsh-plugin 投稿草稿（data/plugins/john-walks-slow__dsh-qol.yml）
+# 前置：仓库创建满 1 天（2026-09-18 起可提）+ 打 topic `dsh-plugin`（另可加 deepseek-harness / ai-agent）。
+# 流程：fork awesome-dsh-plugin → 只加这一个文件 → PR；README 勿手改（脚本生成）。
+# 硬规则：description 含 ASCII ": " 必须加引号；描述会被对着代码核，只写实际行为、不带营销词。
+# 分类：category 取值见 contributing.md（agi/ui/usage/theme/model/identity/session/memory/tools/
+#       wsl/browser/vision/voice/docs/skill/workflow/git/notify/dev/security/remote/market/fun）。
+#       本插件是 Web 界面体验优化 → 选 ui（session 指会话管理类，勿混）。
+# 搜索机制（dsh-market 实测源码）：只索引 name/npm/owner/description(en+zh)/category，
+# 不索引 README 与 npm keywords——双语描述是唯一搜索优化面，务必双语都写、keyword 密集。
+url: https://github.com/john-walks-slow/dsh-qol
+name: john-walks-slow/dsh-qol
+category: ui
+description:
+  en: 'Mobile-first Web UI quality-of-life pack for the DeepSeek Harness: a Chrome-style active-session tab bar, full-screen sidebar swipe open/close, overlay sidebar, collapsed-sidebar recents, keyboard-suppressing session switching, viewport/IME keyboard adaptation, touch feedback, code/table inner scrolling, hidden permission dropdown, a full-screen settings rewrite with tab memory, and a compositor-driven status pulse — 13 features, each independently toggleable from the Settings QoL section with instant effect, persisted per browser in localStorage; pure client-side CSS/JS, mobile rules locked to viewports of 768px and below so desktop stays untouched.'
+  zh: '面向 dsh Web GUI 的移动优先体验优化包：Chrome 式活跃会话标签页（Tab Bar）、全屏侧栏滑动开合、侧栏浮层与折叠态最近会话、切换会话不拉起输入法、viewport/键盘安全区适配、按钮触摸反馈、代码块表格内滚、隐藏权限下拉、设置页全屏重写与页签记忆、合成器线程状态动画——13 项功能均可在设置页 QoL 分区独立开关、即时生效，并按浏览器持久保存在 localStorage；纯客户端 CSS/JS，移动规则锁定 ≤768px 视口，桌面端零影响。'

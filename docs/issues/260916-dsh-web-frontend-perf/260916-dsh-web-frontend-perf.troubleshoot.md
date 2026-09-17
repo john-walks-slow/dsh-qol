@@ -1,9 +1,9 @@
 # DSH Web 前端性能问题诊断
 
 > 日期: 2026-09-16  
-> 环境: 红米 K30S Ultra (骁龙865, 8GB RAM), Android 后台 chroot Ubuntu 容器  
+> 环境: Android 后台 chroot Ubuntu 容器（ARM64 移动设备）  
 > 线上实例: `http://127.0.0.1:4175`  
-> 源码位置: `/usr/lib/node_modules/@deepseek-ai/dsh/node_modules/@deepseek-ai/`
+> 源码位置: `@deepseek-ai/dsh` 主包内嵌 node_modules 的 `@deepseek-ai/*` 模块
 
 ## 问题描述
 
@@ -81,7 +81,7 @@ rAF 间隔数据 `[14,12,17,32,17,18,78,77,21,17,60,10,29,...]` 显示高度不�
 | 其余 13 个资源 | — | ~1.1MB | — | — |
 | **合计** | — | **9.85MB** | — | totalTransfer 3.73MB |
 
-**关键计算**: 骁龙865 ARM64 上 7.09MB minified JS 的 parse + eval（单线程主线程）估计 2–4s。这期间主线程完全阻塞，所有交互无响应。
+**关键计算**: ARM64 移动 SoC 上 7.09MB minified JS 的 parse + eval（单线程主线程）估计 2–4s。这期间主线程完全阻塞，所有交互无响应。
 
 **为什么是启动大头**: 这是用户每次打开页面都必须承受的固定成本，且量级（7MB 单文件）远超其他所有因素。
 

@@ -1,10 +1,14 @@
 {
   "name": "dsh-qol",
   "version": "1.0.0",
-  "description": "Quality-of-life tweaks for the DeepSeek Harness Web UI: session tab bar, sidebar swipe gesture, settings dialog rewrite, IME/keyboard adaptation, touch feedback, and more — each independently toggleable from the Settings page.",
+  "description": "Quality-of-life tweaks for the DeepSeek Harness Web UI: Chrome-style session tab bar, edge-swipe sidebar, IME/keyboard adaptation, touch feedback, full-screen mobile settings and more — 13 features, each independently toggleable from the Settings page, with instant effect and per-browser persistence. dsh Web GUI 体验优化插件：会话 Tab Bar、侧栏滑动开合、输入法/键盘适配、触摸反馈、移动端设置页全屏重写等 13 项功能，均可在设置页独立开关，即时生效并按浏览器持久保存。",
   "license": "MIT",
   "type": "module",
   "main": "lib/index.js",
+  "scripts": {
+    "build": "node --check lib/index.js && node --check lib/client.js",
+    "prepare": "npm run build"
+  },
   "exports": {
     ".": "./lib/index.js",
     "./client": "./lib/client.js",
@@ -37,9 +41,16 @@
     "qol",
     "mobile",
     "tab-bar",
+    "sidebar",
     "ime",
     "touch",
-    "web-ui"
+    "web-ui",
+    "体验优化",
+    "移动端",
+    "侧边栏",
+    "标签页",
+    "输入法",
+    "触摸"
   ],
   "repository": {
     "type": "git",
@@ -48,5 +59,6 @@
   "bugs": {
     "url": "https://github.com/john-walks-slow/dsh-qol/issues"
   },
-  "homepage": "https://github.com/john-walks-slow/dsh-qol#readme"
+  "homepage": "https://github.com/john-walks-slow/dsh-qol#readme",
+  "author": "johnnren"
 }

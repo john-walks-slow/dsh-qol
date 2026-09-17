@@ -4,7 +4,7 @@
 
 ## 交付物
 
-- `/root/projects/dsh-mobile-qol/` — 插件本体
+- `<插件项目目录>/` — 插件本体
   - `lib/client.js`（562 行）：6 功能 + 设置页开关 UI + 持久化
   - `lib/index.js`：host 半（空 apply）
   - `package.json` / `cordis.patch.yml`
@@ -29,9 +29,9 @@
 
 ## 部署变更（线上 4175）
 
-1. `/root/.dsh/profiles/web/package.json`：
+1. `~/.dsh/profiles/web/package.json`：
    - `dsh.profile.bundles` 新增 `"dsh-mobile-qol"`、移除 `"dsh-web-mobile-fix"`
-   - `dependencies` 新增 `"dsh-mobile-qol": "link:/root/projects/dsh-mobile-qol"`（`dsh-web-mobile-fix: ^1.0.2` 依赖行**保留未动**，包仍在 node_modules）
+   - `dependencies` 新增 `"dsh-mobile-qol": "link:<插件项目目录>"`（`dsh-web-mobile-fix: ^1.0.2` 依赖行**保留未动**，包仍在 node_modules）
 2. `pnpm install` 已执行（symlink 就位）
 3. 重启 4175 生效（setsid 延迟 detach 方式）
 
@@ -39,9 +39,9 @@
 
 **回退 dsh-mobile-qol（禁用插件）**：
 - 浏览器内：设置 → 移动 QoL → 关闭任意功能（最细粒度）
-- 移除插件：编辑 `/root/.dsh/profiles/web/package.json`，从 `dsh.profile.bundles` 删掉 `"dsh-mobile-qol"` 行，然后 `supervisorctl restart dsh`（或 setsid 方式）
+- 移除插件：编辑 `~/.dsh/profiles/web/package.json`，从 `dsh.profile.bundles` 删掉 `"dsh-mobile-qol"` 行，然后 `supervisorctl restart dsh`（或 setsid 方式）
 
-**恢复 dsh-web-mobile-fix**：编辑 `/root/.dsh/profiles/web/package.json`，在 `dsh.profile.bundles` 数组中（原位置 `@xmanrui/dsh-im` 与 `dsh-shortcuts` 之间）重新加回一行 `"dsh-web-mobile-fix"`，重启 dsh。包未卸载（依赖行保留），无需重新安装。
+**恢复 dsh-web-mobile-fix**：编辑 `~/.dsh/profiles/web/package.json`，在 `dsh.profile.bundles` 数组中（原位置 `@xmanrui/dsh-im` 与 `dsh-shortcuts` 之间）重新加回一行 `"dsh-web-mobile-fix"`，重启 dsh。包未卸载（依赖行保留），无需重新安装。
 
 **回退用户配置**：浏览器 localStorage 删 `dsh.mobile-qol.v1`（或逐项开关）。
 

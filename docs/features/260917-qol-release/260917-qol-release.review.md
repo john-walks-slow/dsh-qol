@@ -20,7 +20,7 @@
 
 | ID  | 位置 | 问题 | 建议 |
 | --- | ---- | ---- | ---- |
-| BLK-01 | `e2e/mobile.mjs:30`<br>`e2e/verify-real.mjs:8`<br>`e2e/test-settings-features.mjs:4`<br>`e2e/integration.mjs:14` | **硬编码公网暴露实例的真实访问令牌（Token）**：检视发现 `<redacted>...` 等 Token 为本地 DSH 实例的真实认证凭据，且系统配置中已通过 Cloudflare 命名隧道将该实例映射至公网（`<dsh-host>`）。若按计划将仓库推送到公开 GitHub 仓库，公网用户可通过该 Token 绕过鉴权直接接管 DSH 实例，进而通过 Agent 获得宿主系统的终端执行权限。 | 将 E2E 脚本中的 Token 和目标 URL 改为从环境变量读取（例如 `process.env.DSH_TOKEN`，缺省时提示并退出），并在发布前重置/轮转线上当前的 DSH Token。确保发布至 Git 仓库的文件不含任何真实私密凭据。 |
+| BLK-01 | `e2e/mobile.mjs:30`<br>`e2e/verify-real.mjs:8`<br>`e2e/test-settings-features.mjs:4`<br>`e2e/integration.mjs:14` | **硬编码公网暴露实例的真实访问令牌（Token）**：检视发现（token 片段已脱敏）等 Token 为本地 DSH 实例的真实认证凭据，且系统配置中已通过 Cloudflare 命名隧道将该实例映射至公网（域名已脱敏）。若按计划将仓库推送到公开 GitHub 仓库，公网用户可通过该 Token 绕过鉴权直接接管 DSH 实例，进而通过 Agent 获得宿主系统的终端执行权限。 | 将 E2E 脚本中的 Token 和目标 URL 改为从环境变量读取（例如 `process.env.DSH_TOKEN`，缺省时提示并退出），并在发布前重置/轮转线上当前的 DSH Token。确保发布至 Git 仓库的文件不含任何真实私密凭据。 |
 
 ---
 

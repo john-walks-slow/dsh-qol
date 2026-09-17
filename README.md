@@ -1,6 +1,11 @@
 # dsh-qol
 
-dsh Web GUI 体验优化（QoL）插件：注入 CSS/JS 优化片段，**每个功能可在设置页独立开关**，即时生效、持久保存。以移动端为主，部分功能（Tab Bar、状态动画等）桌面端同样生效。
+<p align="center">
+  <a href="./README.md"><strong>简体中文</strong></a> ·
+  <a href="./README.en.md"><strong>English</strong></a>
+</p>
+
+dsh（DeepSeek Harness）Web GUI 体验优化插件：会话 Tab Bar、侧栏滑动开合、输入法/键盘适配、触摸反馈、设置页全屏重写等 **13 项功能**，每项都可在 **设置 → QoL** 独立开关，即时生效、按浏览器持久保存。移动端为主，部分功能（Tab Bar、状态动画等）桌面端同样生效。
 
 ## 功能
 
@@ -23,50 +28,75 @@ dsh Web GUI 体验优化（QoL）插件：注入 CSS/JS 优化片段，**每个�
 ## 安装
 
 ```bash
-npm i dsh-qol
+dsh plugin --profile web add dsh-qol
 ```
 
-然后在 dsh profile 的 `package.json` 中挂载：
+安装后无需手动改配置，插件自带的 `cordis.patch.yml` 自动挂载；刷新 Web 页面后，设置页会出现 **QoL** 分区。
 
-```json
-{
-  "dependencies": { "dsh-qol": "^1.0.0" },
-  "dsh": { "profile": { "bundles": ["dsh-qol"] } }
+从 GitHub 直装（源码安装；`lib/` 即手写源码无需本地构建，但包声明了 `prepare` 语法校验脚本，pnpm ≥10 首次会被拦截）：
+
+```bash
+dsh plugin --profile web add github:john-walks-slow/dsh-qol
+# 把 pnpm 提示的包名加入 ~/.dsh/profiles/web/pnpm-workspace.yaml
+# 的 allowBuilds 后重跑即可
 ```
-
-重启 dsh 后，设置页会出现 **QoL** 分区。
 
 ## 使用
 
 1. 打开 dsh Web GUI（移动端体验最佳）。
-2. 设置 → **QoL**：每个功能一行开关，点击即时生效。
-3. 配置存于浏览器 `localStorage`（键 `dsh.qol.v1`），仅本浏览器生效。
+2. 设置 → **QoL**：13 行功能开关（名称 + 一行说明），点击**即时生效**，无需刷新页面。
+3. 配置自动持久保存到浏览器 `localStorage`（键 `dsh.qol.v1`），仅本浏览器生效；清掉该键即恢复全部默认开启。
 
-## 架构
+开关落盘的真实形态（`localStorage["dsh.qol.v1"]`）：
 
-- **纯客户端插件**：host 侧 `apply` 为空；浏览器半通过 `window.__ModuleLoader__.load` factory 加载。
-- **属性总闸**：每功能对应 `html[data-qol-<id>]` 属性；CSS 规则与 JS 事件处理都读它——开关 = 打/摘属性，无需重载。
-- **桌面零影响**：移动专属规则全部锁在 `@media (max-width: 768px)`；跨端功能（Tab Bar、rail、状态动画）在两端统一体验。
-- **结构锚**：CSS 用 `data-slot` / `:has(> nav)` 等结构选择器，零哈希类依赖（状态动画规则的哈希类匹配是**有意例外**，失配只是静默回退，见 client.js 内注释）。
-- **形状防御**：所有服务取值 `ctx.get()` + try/catch，任何服务缺失只降级不阻断。
+```json
+{ "active-tabbar": true, "sidebar-gesture": true, "ime-viewport": true, "tap-feedback": true }
+```
+
+开关的实现是一个**属性总闸**：每项功能对应 `html[data-qol-<功能id>]` 属性，CSS 规则与 JS 事件处理都读它——切换 = 打/摘属性，所以能即时生效、无需重载。
+
+## 权限与兼容
+
+- **纯客户端插件**：host 侧 `apply` 为空，**零 npm 运行时依赖**；全部逻辑在浏览器半（`lib/client.js`）执行
+- **零权限**：无外部服务、无网络请求、无文件系统写入、不读取会话内容——只改浏览器侧 CSS、DOM 事件与 viewport meta
+- **配置不出浏览器**：开关状态仅存本浏览器 `localStorage`，不上传、不落盘到服务器
+- **桌面零影响**：移动专属规则全部锁在 `@media (max-width: 768px)`；跨端功能（Tab Bar、rail、状态动画）两端统一体验
+- **不改元素尺寸/字号**：有意设计约束（触摸反馈与 IME 适配均只动行为/合成层）
+- **降级不阻断**：所有宿主服务取值 `ctx.get()` + try/catch，服务缺失只 `console.warn` 降级；结构锚选择器若随宿主改版失配，对应规则静默不生效，页面不受影响
+- **与 dsh-web-mobile-fix 可共存**（见下）
+- **实测基线**：当前 dsh 稳定版（0.1.x）web profile + Chromium/Firefox 内核移动模拟；真机（iOS Safari / Android Chrome）的触摸手感与 IME 细节建议按需人工确认
 
 ### 与 dsh-web-mobile-fix 的关系
 
-两者**可共存**（当前部署即如此）：dsh-web-mobile-fix 提供紧凑移动布局（32px 会话头按钮、隐藏面包屑等）；本插件提供可开关的 QoL 层（手势 / IME / Tab Bar 等）。设置对话框规则有重叠但视觉等价，并集安全。若不需要 mobile-fix 的紧凑布局，也可单独移除它——本插件的 `settings-mobile` 覆盖其设置页 CSS。
+两者**可共存**：dsh-web-mobile-fix 提供紧凑移动布局（32px 会话头按钮、隐藏面包屑等）；本插件提供可开关的 QoL 层（手势 / IME / Tab Bar 等）。设置对话框规则有重叠但视觉等价，并集安全。若不需要 mobile-fix 的紧凑布局，也可单独移除它——本插件的 `settings-mobile` 覆盖其设置页 CSS。
 
-## 开发
+## 工作原理
+
+- **纯客户端**：host 侧空 `apply` 仅用于把包挂进 profile；浏览器半通过 `window.__ModuleLoader__.load` factory 加载（`exports["./client"]` + `package.json` 的 `dsh.client` 声明）。
+- **属性总闸**：见上，开关即时生效的关键。
+- **结构锚**：CSS 用 `data-slot` / `:has(> nav)` 等结构选择器，零哈希类依赖（状态动画规则的哈希类匹配是**有意例外**，失配只是静默回退，见 client.js 内注释）。
+- **形状防御**：所有服务取值 try/catch 包裹，任何服务缺失只降级不阻断加载。
+
+## 本地开发
 
 ```bash
-# E2E（需 camoufox + playwright-core，目标为运行中的 dsh 实例）
-# token 从环境变量读取（dsh web 启动时打印），避免凭据入库：
-export DSH_E2E_TOKEN_4175=<线上实例 token>
+npm install
+npm run build     # 语法校验两份产物：lib/index.js（host 入口）+ lib/client.js（浏览器 bundle）
+```
+
+E2E（开发用，目标为运行中的 dsh 实例；token 从环境变量读取，避免凭据入库）：
+
+```bash
+export DSH_E2E_TOKEN_4175=<线上实例 token>   # dsh web 启动时打印
 export DSH_E2E_TOKEN_4176=<临时实例 token>
 node e2e/mobile.mjs mobile     # Phase-1：mock harness 对真实 DOM 的逻辑验证
 node e2e/mobile.mjs desktop    # 桌面零影响验证
-node e2e/integration.mjs       # Phase-2：4176 临时实例真插件集成验证
+node e2e/integration.mjs       # Phase-2：临时实例真插件集成验证
 ```
 
-- 文档：`docs/features/`（research / plan / validation / summary）。
+注：e2e 依赖本机 camoufox + playwright-core（路径写在各脚本头部，复用需按本机环境调整）。本仓库无单元测试，`npm test` 未提供。
+
+- 功能文档：`docs/features/`（research / plan / validation / summary）。
 - 新增功能：在 `lib/client.js` 的 `FEATURES` 注册表加一条 + 对应 CSS 段/JS 钩子。
 
 ## License

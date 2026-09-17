@@ -27,7 +27,7 @@
 
 ### 2.1 文件结构
 ```
-/root/projects/dsh-mobile-qol/
+~/projects/dsh-mobile-qol/
 ├── package.json              # name/type:module/exports/dsh.client/dsh.bundle.patch
 ├── cordis.patch.yml          # insert 插件行
 ├── lib/
@@ -392,8 +392,8 @@ const FEATURES = [
 ## 4. E2E 测试策略
 
 ### 4.1 测试基建
-- 用 `playwright-core`（在 `/root/projects/camoufox-mcp/node_modules`）+ camoufox 二进制（`/root/.cache/camoufox/camoufox-bin`），firefox.launch + 移动视口（390×844，hasTouch，iPhone UA）。已验证可启动（~800ms）。
-- 认证：`http://127.0.0.1:4175/?token=<TOKEN>`（token 从 /var/log/dsh.log 提取，303 设 cookie）。
+- 用 `playwright-core`（camoufox 项目内 node_modules）+ camoufox 二进制（camoufox 缓存目录），firefox.launch + 移动视口（390×844，hasTouch，iPhone UA）。已验证可启动（~800ms）。
+- 认证：`http://127.0.0.1:4175/?token=<TOKEN>`（token 从 dsh 服务日志提取，303 设 cookie）。
 
 ### 4.2 测试用例
 1. **插件加载**：加载后 `document.documentElement` 有 4 个 `data-qol-*` 属性；`window` 无报错；设置页有"移动 QoL"卡。

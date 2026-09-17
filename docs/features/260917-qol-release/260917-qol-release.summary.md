@@ -9,7 +9,7 @@
 1. **删除弹窗居中重锚（popover-recenter）**：用户判定无用。移除 FEATURES 注册表条目、CSS 四组规则（hero 重锚、active 态宽度/z-index、backdrop-filter 消解、portal safe-area）、相关注释与 README 行。`docs/issues/260916-mobile-dropdown-position/` 历史记录保留不动。
 2. **Tab Bar 鼠标中键关闭**：`.astb-tab` 增加 `onMouseDown`（button===1 preventDefault，抑制浏览器自动滚动光标）+ `onAuxClick`（button===1 → 既有 handleClose）。auxclick 不产生 click 事件，不会误触切换。hint 文案更新。
 3. **项目改名 dsh-mobile-qol → dsh-qol**（搜索替换）：
-   - 目录 `/root/projects/dsh-mobile-qol` → `/root/projects/dsh-qol`（旧路径留兼容软链至本会话结束）
+   - 项目目录 `dsh-mobile-qol` → `dsh-qol`（旧路径留兼容软链至本会话结束）
    - `package.json` name、`cordis.patch.yml`（id: qol / name: 'dsh-qol'，遵循 wait-subagent/whip 的 id 约定）
    - client.js：模块 id、localStorage 三键（dsh.qol.v1 / .opentabs / .settings-tab）、style 标记、日志前缀、设置分区 id/label（"移动 QoL"→"QoL"）
    - e2e 全部引用、README
@@ -29,7 +29,7 @@
 
 首轮结论**不准入**（BLK-01 阻塞），逐项修复后复验通过：
 
-- **BLK-01（阻塞）** e2e 硬编码 4175/4176 实例真实 token（4175 经 Cloudflare 命名隧道映射公网 `<dsh-host>`，发布即凭据泄漏）→ 全部改为环境变量 `DSH_E2E_TOKEN_4175` / `DSH_E2E_TOKEN_4176`（缺失即报错退出），README 开发节补说明；提交前全仓扫描确认无 token 残留。**发布前建议轮转线上 token（随重启自然轮转）**。
+- **BLK-01（阻塞）** e2e 硬编码 4175/4176 实例真实 token（4175 经 Cloudflare 命名隧道映射公网，域名已脱敏，发布即凭据泄漏）→ 全部改为环境变量 `DSH_E2E_TOKEN_4175` / `DSH_E2E_TOKEN_4176`（缺失即报错退出），README 开发节补说明；提交前全仓扫描确认无 token 残留。**发布前建议轮转线上 token（随重启自然轮转）**。
 - **REC-01** handleClose 关当前 tab 引发切换时缺 `_armSuppress()` → 已补（中键/× 关当前 tab 后不再误拉输入法）。
 - **REC-02** 历史命名残留 `dsh-mq-*` 类名与 `_mq-state-pulse` 关键帧 → 统一 `dsh-qol-*` / `_qol-state-pulse`，e2e 选择器同步。
 - **REC-03** README 与 client.js 注释对 dsh-web-mobile-fix 共存策略表述冲突 → 统一为"可共存、互补、并集安全"（与实际部署一致；用户 09-15 曾刻意恢复 mobile-fix）。
@@ -60,4 +60,4 @@
 
 **验证方式调整**：用户指示跳过 e2e。已做线上只读探针（插件加载 ✓、＋在容器内 348px 处而非右缘 1274px ✓、无页面错误 ✓）；其余行为进 validation.md 第 4 节实机清单。e2e 中键用例的未提交扩展已回退（依赖共享 home 真实会话）。
 
-**e2e 遗留技术债**：dev-dsh-plugin 新规范要求 e2e 临时实例用独立 `DSH_HOME`（共享 /root/.dsh 会 seq 对撞损坏会话日志，09-15~17 已损坏 6 份）。`e2e/integration.mjs` 现行版本（切换真实会话造 tab）与隔离 home 不兼容，需改造：隔离实例 + 会话准备策略（发消息造非 blank 会话）。本日 3 轮共享 home Phase-2 已扫描线上日志，无 `corrupt session log / refusing append` 记录，未触损伤。
+**e2e 遗留技术债**：dev-dsh-plugin 新规范要求 e2e 临时实例用独立 `DSH_HOME`（共享同一 DSH_HOME 会 seq 对撞损坏会话日志，09-15~17 已损坏 6 份）。`e2e/integration.mjs` 现行版本（切换真实会话造 tab）与隔离 home 不兼容，需改造：隔离实例 + 会话准备策略（发消息造非 blank 会话）。本日 3 轮共享 home Phase-2 已扫描线上日志，无 `corrupt session log / refusing append` 记录，未触损伤。
