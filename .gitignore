@@ -2,3 +2,4 @@ node_modules/
 .mnemon/
 e2e/*.png
 /tmp/
+*.tgz
