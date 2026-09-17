@@ -1,6 +1,6 @@
 # dsh-qol 发布准备 — 总结
 
-日期：2026-09-17 · 状态：e2e 全绿，待用户实机验证与发布指令
+日期：2026-09-17 · 状态：检视问题全部修复 + e2e 复验全绿，待用户实机验证与发布指令
 
 ## 交付内容
 
@@ -23,6 +23,18 @@
 - Phase-1 mobile **19/19**、desktop **9/9**（4175 真实页面 mock eval；desktop 断言 touch-action 非 manipulation，媒体查询不命中）。
 - Phase-2 integration **18/18**（4176 临时实例 `dsh web --patch /tmp/enable-qol.yml`，含中键关闭端到端用例）。
 - 顺手修复：e2e 手势用例派发 PointerEvent 但插件监听 Touch Events（历史失效），改为 TouchEvent 派发后对真实 layout 服务验证通过。
+- 检视后复验：三套 e2e 重新全绿（19/19 + 9/9 + 18/18）。
+
+## 检视与修复（reviewer 报告：260917-qol-release.review.md）
+
+首轮结论**不准入**（BLK-01 阻塞），逐项修复后复验通过：
+
+- **BLK-01（阻塞）** e2e 硬编码 4175/4176 实例真实 token（4175 经 Cloudflare 命名隧道映射公网 `<dsh-host>`，发布即凭据泄漏）→ 全部改为环境变量 `DSH_E2E_TOKEN_4175` / `DSH_E2E_TOKEN_4176`（缺失即报错退出），README 开发节补说明；提交前全仓扫描确认无 token 残留。**发布前建议轮转线上 token（随重启自然轮转）**。
+- **REC-01** handleClose 关当前 tab 引发切换时缺 `_armSuppress()` → 已补（中键/× 关当前 tab 后不再误拉输入法）。
+- **REC-02** 历史命名残留 `dsh-mq-*` 类名与 `_mq-state-pulse` 关键帧 → 统一 `dsh-qol-*` / `_qol-state-pulse`，e2e 选择器同步。
+- **REC-03** README 与 client.js 注释对 dsh-web-mobile-fix 共存策略表述冲突 → 统一为"可共存、互补、并集安全"（与实际部署一致；用户 09-15 曾刻意恢复 mobile-fix）。
+- **NBL-02** 弱断言 `>= 11` → `=== 13`；过期注释清理。
+- **NBL-01**（localStorage 旧键迁移）不修：1.0.0 首发无存量用户，遵循"上线前不做兼容"原则。
 
 ## 关键发现与过程记录
 
