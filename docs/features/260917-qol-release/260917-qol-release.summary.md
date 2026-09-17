@@ -47,6 +47,6 @@
 
 ## 遗留事项
 
-- 线上是否重新启用 dsh-qol（移除用户层 disable 补丁）+ 重启 4175：待用户决定。
-- npm publish / GitHub 建仓推送：待用户指令（本地 git 仓库已就绪）。
-- 用户实机验证清单：`260917-qol-release.validation.md`。
+- ~~线上是否重新启用 dsh-qol~~ **已处理（16:50 用户指示：移除禁用、不重启）**：用户层 disable 补丁已从 `~/.dsh/profiles/web/cordis.patch.yml` 移除，dump-config 确认组合树中 dsh-qol 无 disabled 标记。当前运行中的 4175 实例不受影响（未重启），**下次自然重启时插件自动恢复**。恢复后 localStorage 用新键 `dsh.qol.v1`（开关回默认全开）。
+- npm publish / GitHub 建仓推送：用户指示暂不发布；本地 git 仓库已就绪（3 commits，工作树干净），随时可执行。
+- 用户实机验证清单：`260917-qol-release.validation.md`（中键关闭需桌面真实鼠标；弹窗移除效果需手机验证）。
