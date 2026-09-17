@@ -50,3 +50,14 @@
 - ~~线上是否重新启用 dsh-qol~~ **已处理（16:50 用户指示：移除禁用、不重启）**：用户层 disable 补丁已从 `~/.dsh/profiles/web/cordis.patch.yml` 移除，dump-config 确认组合树中 dsh-qol 无 disabled 标记。当前运行中的 4175 实例不受影响（未重启），**下次自然重启时插件自动恢复**。恢复后 localStorage 用新键 `dsh.qol.v1`（开关回默认全开）。
 - npm publish / GitHub 建仓推送：用户指示暂不发布；本地 git 仓库已就绪（3 commits，工作树干净），随时可执行。
 - 用户实机验证清单：`260917-qol-release.validation.md`（中键关闭需桌面真实鼠标；弹窗移除效果需手机验证）。
+
+## 追加 — Tab Bar 第二轮调整（18:31 需求，20:4x 交付）
+
+1. **＋按钮 Chrome 式跟随**：`.astb-controls`（＋）从 bar 末尾移入 `.astb-tabs-container` 内、tabs 之后——未满时紧跟最后 tab，溢出时随滚动容器移动。
+2. **新会话标题**：新增 `sessionTitle()`——`sess.blank` 时显示「新会话」（宿主 displayTitle 会回退成工作区名）；tab 与 rail 两处统一。
+3. **末位 tab 不可关**（README 17:32 规格，另一会话按用户意图写入）：`handleClose` 剩余可见 tab 为 0 时直接 no-op；仅剩一个 tab 时不渲染 ×。避免关最后一个 tab 只会空转出一个新空白会话。
+4. **handleNew 补 `_armSuppress()`**：点 ＋ 新建会话同样不拉输入法。
+
+**验证方式调整**：用户指示跳过 e2e。已做线上只读探针（插件加载 ✓、＋在容器内 348px 处而非右缘 1274px ✓、无页面错误 ✓）；其余行为进 validation.md 第 4 节实机清单。e2e 中键用例的未提交扩展已回退（依赖共享 home 真实会话）。
+
+**e2e 遗留技术债**：dev-dsh-plugin 新规范要求 e2e 临时实例用独立 `DSH_HOME`（共享 /root/.dsh 会 seq 对撞损坏会话日志，09-15~17 已损坏 6 份）。`e2e/integration.mjs` 现行版本（切换真实会话造 tab）与隔离 home 不兼容，需改造：隔离实例 + 会话准备策略（发消息造非 blank 会话）。本日 3 轮共享 home Phase-2 已扫描线上日志，无 `corrupt session log / refusing append` 记录，未触损伤。
