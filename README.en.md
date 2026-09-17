@@ -105,3 +105,20 @@ Note: e2e depends on a local camoufox + playwright-core (paths are hardcoded at 
 ## License
 
 MIT
+
+## Release a new version
+
+One command runs tests, bumps the version and packs (`npm version` also commits and tags):
+
+```bash
+npm run release        # patch; for bigger changes: npm version minor or major
+```
+
+Then publish with the fingerprint flow and push:
+
+```bash
+node ~/.agents/skills/npm-publish/scripts/publish-webauthn.cjs /tmp/dsh-qol-<newver>.tgz
+git push --follow-tags
+```
+
+Verify with `npm view dsh-qol version`. When releasing several packages, check "do not challenge for the next 5 minutes" on the webauthn page to publish them all with one fingerprint.
