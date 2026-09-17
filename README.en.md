@@ -8,7 +8,7 @@
 Quality-of-life tweaks for the DeepSeek Harness (dsh) Web GUI: a session tab bar, sidebar swipe gestures, IME/keyboard adaptation, touch feedback, a full-screen settings rewrite and more — **13 features**, each independently toggleable from **Settings → QoL**, taking effect instantly and persisted per browser. Mobile-first; some features (tab bar, status animation, etc.) apply on desktop too.
 
 
-![dsh-qol in the DSH settings: per-feature toggles for the mobile-first web UI enhancements](assets/screenshot-1.png)
+![dsh-qol: mobile tab bar and desktop views of the DeepSeek Harness web UI](assets/hero.png)
 
 ## Features
 
