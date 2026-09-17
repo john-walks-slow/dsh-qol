@@ -1,0 +1,7 @@
+# dsh-qol bundle patch
+# Mounts the plugin row. The id names the loader entry; the name must match
+# this package name. Remove this insert block (or drop the bundle from the
+# profile bundles list) to fully uninstall the plugin.
+- insert:
+    - id: qol
+      name: 'dsh-qol'
