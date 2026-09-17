@@ -7,6 +7,9 @@
 
 dsh（DeepSeek Harness）Web GUI 体验优化插件：会话 Tab Bar、侧栏滑动开合、输入法/键盘适配、触摸反馈、设置页全屏重写等 **13 项功能**，每项都可在 **设置 → QoL** 独立开关，即时生效、按浏览器持久保存。移动端为主，部分功能（Tab Bar、状态动画等）桌面端同样生效。
 
+
+![dsh-qol in the DSH settings: per-feature toggles for the mobile-first web UI enhancements](assets/screenshot-1.png)
+
 ## 功能
 
 | 功能 | 说明 | 默认 |
