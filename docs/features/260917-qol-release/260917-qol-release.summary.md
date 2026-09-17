@@ -61,3 +61,14 @@
 **验证方式调整**：用户指示跳过 e2e。已做线上只读探针（插件加载 ✓、＋在容器内 348px 处而非右缘 1274px ✓、无页面错误 ✓）；其余行为进 validation.md 第 4 节实机清单。e2e 中键用例的未提交扩展已回退（依赖共享 home 真实会话）。
 
 **e2e 遗留技术债**：dev-dsh-plugin 新规范要求 e2e 临时实例用独立 `DSH_HOME`（共享同一 DSH_HOME 会 seq 对撞损坏会话日志，09-15~17 已损坏 6 份）。`e2e/integration.mjs` 现行版本（切换真实会话造 tab）与隔离 home 不兼容，需改造：隔离实例 + 会话准备策略（发消息造非 blank 会话）。本日 3 轮共享 home Phase-2 已扫描线上日志，无 `corrupt session log / refusing append` 记录，未触损伤。
+
+## 追加 — 新会话不占 tab（02:09 用户定案，替代前两轮"末位"方案）
+
+用户对齐后的最终语义：**tab bar 只显示真实会话**。
+
+- 点 ＋ / 切到新会话：tab bar 仅取消选中（无 active tab），不产生新 tab
+- 新会话发出首条消息后（非 blank）自动出现为选中 tab；发送中（blank+running）短暂显示「新会话」标题，避免闪烁
+- 关掉最后一个 tab：落到无选中的新会话，tab bar 清空
+- 实现统一收敛为显示层过滤 `isReal(s) = !s.blank || s.running`（tab 与 rail 同源）；"末位不可关"特判整体移除——所有显示的 tab 恒可关（× 恒可见）
+- 关闭当前 tab 的切换目标从 openTabs storage 改为**可见 tab 列表**（storage 可能残留已被宿主销毁的 blank id）
+- openTabs effect 顺手清理已销毁会话 id，防止陈旧条目把真实 tab 顶出 MAX_TABS 窗口
