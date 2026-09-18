@@ -154,6 +154,74 @@ try {
   console.log('Stored tab after click:', storedTab);
   check(storedTab && (storedTab.label === selectTabName || storedTab.index === selectIndex), `Tab "${selectTabName}" recorded into localStorage`);
 
+  // 4.5 caret-debug 诊断块：切到 QoL tab，开启光标跳变调试开关，
+  //     验证导出按钮出现、点击后 textarea fallback 携带日志头部
+  console.log('Testing caret-debug export block in QoL section...');
+  const qolIdx = tabNames.findIndex(t => t.trim() === 'QoL' || t.includes('QoL'));
+  const qolOk = await page.evaluate((idx) => {
+    const nav = document.querySelector('[role="dialog"]:has(> nav) > nav');
+    const btns = nav.querySelectorAll('button');
+    if (!btns[idx]) return false;
+    btns[idx].click();
+    return true;
+  }, qolIdx === -1 ? 2 : qolIdx);
+  await page.waitForTimeout(800);
+  if (qolOk) {
+    const exportInfo = await page.evaluate(() => {
+      // 找到 caret-debug 开关行（label 文本含「光标跳变调试」），点击其
+      // switch 元素（flip 绑在 span.dsh-qol-switch 上，label 本身无 onClick）
+      const rows = [...document.querySelectorAll('.dsh-qol-row')];
+      const row = rows.find(r => r.textContent.includes('光标跳变调试'));
+      if (!row) return { found: false };
+      const sw = row.querySelector('.dsh-qol-switch');
+      if (!sw) return { found: true, checked: row.getAttribute('data-checked'), noSwitch: true };
+      if (row.getAttribute('data-checked') === 'false') sw.click();
+      return { found: true, checked: row.getAttribute('data-checked') };
+    });
+    check(exportInfo.found, 'caret-debug toggle row found in QoL section');
+    check(exportInfo.checked === 'true', 'caret-debug toggle turned on (data-checked=' + exportInfo.checked + ')');
+    await page.waitForTimeout(300);
+    const clickedExport = await page.evaluate(() => {
+      const btns = [...document.querySelectorAll('.dsh-qol-panel button')];
+      const copyBtn = btns.find(b => b.textContent.includes('复制调试日志'));
+      if (!copyBtn) return { found: false };
+      copyBtn.click();
+      return { found: true };
+    });
+    check(clickedExport.found, 'copy-debug-log button rendered when the toggle is on');
+    await page.waitForTimeout(600); // clipboard promise → copied state or fallback textarea
+    const exported = await page.evaluate(() => {
+      const panel = document.querySelector('.dsh-qol-panel');
+      if (!panel) return { ok: false };
+      const btns = [...panel.querySelectorAll('button')];
+      const copied = btns.some(b => b.textContent.includes('已复制'));
+      const t = panel.querySelector('textarea');
+      const hasLog = t && t.value.includes('== dsh-qol caret-debug ==');
+      return { ok: copied || !!hasLog, copied, textarea: !!t, hasLog };
+    });
+    check(exported.ok, 'export produces the log (copied=' + exported.copied + ', textarea=' + exported.textarea + ')');
+    // 清空按钮移除 textarea
+    await page.evaluate(() => {
+      const btns = [...document.querySelectorAll('.dsh-qol-panel button')];
+      btns.find(b => b.textContent.trim() === '清空')?.click();
+    });
+    await page.waitForTimeout(300);
+    const taGone = await page.evaluate(() => !document.querySelector('.dsh-qol-panel textarea'));
+    check(taGone, 'clear button dismisses the exported log');
+    // 关回开关，恢复默认（不影响其他测试/真机状态），并切回原页签
+    // （避免污染后续 remember-tab 断言）
+    await page.evaluate((origIdx) => {
+      const rows = [...document.querySelectorAll('.dsh-qol-row')];
+      const row = rows.find(r => r.textContent.includes('光标跳变调试'));
+      if (row && row.getAttribute('data-checked') === 'true') row.querySelector('.dsh-qol-switch').click();
+      const nav = document.querySelector('[role="dialog"]:has(> nav) > nav');
+      const btns = nav.querySelectorAll('button');
+      if (btns[origIdx]) btns[origIdx].click();
+    }, selectIndex);
+  } else {
+    console.log('  (QoL tab not found — skip caret-debug export checks)');
+  }
+
   // 5. 点击右上角关闭按钮关闭设置弹窗
   console.log('Closing settings dialog via top-right close button...');
   const closed = await page.evaluate(() => {
