@@ -32,6 +32,58 @@
 - 是否只在中文拼音合成中出现，英文直接键入是否也会；
 - 跳光标时是否伴随键盘候选栏变化/视觉抖动（区分 composition 边界族 vs 焦点类问题）。
 
+## 第一次实机捕获（2026-09-18，v1 插桩，Chrome 149 Android 10）
+
+用户回传 3 个快照，性质分为两类：
+
+### Capture 1/2 —— 宿主清空噪音（非本 bug，v1 检测器盲区）
+
+两个快照模式完全一致：持续打字到 N（38/249）→ `focusout` → `focusin`（80–207ms）→ `focusout`（13–77ms）→ `sel f=0/0 **len=0**`。
+
+- `len=0` 说明不是光标跳，而是 **root 内容被清空**（selection 随之落 0）。签名与「发送后清空 / 会话切换草稿迁移」吻合（此前静态分析的三条宿主路径之二）。
+- v1 误捕获原因：`pointerdown` 计时只跟踪 composer 内点按，点**发送按钮**（seat 之外）不重置 400ms 窗口 → 合法清空被当作无操作跳变。
+- 快速 focusin↔focusout 交替（13–86ms）说明清空伴随组件焦点重排，具体属宿主正常行为还是另一个问题，待用户确认操作场景（是否点了发送/切会话）。
+
+### Capture 3 —— 真·复现（本 bug 本体）
+
+时间线（len=83 恒定，无 focus 事件、无 tree-mutate、无 pointerdown）：
+
+```
+beforeinput insertText → sel f=32/83   ← 用户在中间位置（29）插入 3 字符
+[712ms 无任何事件]
+sel f=67/83                            ← 光标跳到 67
+[584ms 无任何事件]
+sel f=82/83  JUMP-DETECTED end         ← 再跳到 82（文末附近）
+```
+
+排除与确认：
+
+- **排除宿主 setDraft/重挂载**：len 恒定 83，无 tree-mutate（root.clear+重建必触发）。
+- **排除用户操作**：无 pointerdown、无 input、无 focus。
+- **确认纯程序性 selection 变更**，且**分两次异步跳位**（32→67→82），不是一步到位——符合 Lexical update/reconciliation 循环的多次 selection 设置。
+- **关键新线索：全程 0 个 composition 事件**。用户 IME 走 `beforeinput insertText` 直插路径（候选词上屏为一次多字符 insertText，如 25→34 一次 +9）。Lexical 的 Android IME 处理大量假定 composition 流程；**非 composition 直插是已知高危路径**。
+- 快照尾部 len 83→82→81→78 递减但无任何 beforeinput/composition —— **程序性文本改写**（Lexical reconciliation 或 ZWSP 清理），v1 的 childList observer 看不到（文本节点内部变化）。
+- 中途 81→30 的大跳（无事件）后用户在 30 处正常输入：用户主动移动光标（长按拖 selection handle），handle 拖动的 pointerdown target 在浏览器私有 UI 上、不在 seat 内 → v1 未计入窗口。此细节还原了用户原始场景：**把光标放到中间编辑，随后光标自行跳到末尾**。
+
+### 结论修正
+
+维持「上游 Lexical-on-Android 缺陷」判定，方向从「composition 边界族」修正为 **「非 composition 的 insertText 直插路径 + Lexical selection reconciliation」**。置信度 ~85%。
+
+## 插桩 v2（已实施）
+
+针对 v1 三个盲区：
+
+1. **RESET-TO-EMPTY 识别**：`len===0` 的跳到开头标注为宿主清空，只记日志不占快照配额（避免噪音挤掉真复现）。
+2. **characterData 监听**：MutationObserver 加 `characterData: true`，捕获文本节点内部的程序性改写（记长度变化，不记内容）——下次复现可直接看到跳位瞬间是否伴随文本改写。
+3. **pointerdown 全局记录**：seat 外的 pointerdown（发送按钮等）也重置跳变窗口并记日志（`pointerdown-outside <tag>`）。
+
+e2e：e2e/caret-debug.mjs 增至 16 断言（v2 三场景全覆盖）。
+
+## 待用户第二次复现（v2）
+
+- 正常使用，等光标再跳末尾一次 → 导出日志（重点看跳变前是否出现 `charData-mutate`）。
+- 顺带确认 capture 1/2 场景：当时是否点了发送/切了会话。
+
 ## 后续路径选项
 
 1. **接受现状**：上游 Lexical 缺陷，等官方修复（0.49.0 已含 #7725 offset 崩溃修复，残余 composition 问题仍在跟踪）。

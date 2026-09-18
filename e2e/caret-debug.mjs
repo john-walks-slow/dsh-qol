@@ -142,10 +142,59 @@ check(logText.includes('compositionstart') && logText.includes('compositionend')
 check(/compositionupdate data\.len=4/.test(logText), 'composition data recorded as METADATA length only (data.len=4, no raw text)');
 check(/sel f=5\/20/.test(logText) && /sel f=20\/20/.test(logText), 'captured log contains both sel reports (mid and end)');
 
+// --- v2: host-clear noise must NOT consume a snapshot slot ---
+// (captures 1-2 signature on the real device: send/switch → root emptied,
+// caret 0 — v1 mis-persisted these as jump-to-start)
+await page.evaluate(() => {
+  const edit = document.querySelector('#__qol_edit');
+  edit.textContent = ''; // wholesale clear, no beforeinput
+  const sel = window.getSelection();
+  const r = document.createRange();
+  r.setStart(edit, 0); r.setEnd(edit, 0); // selection on the empty root itself
+  sel.removeAllRanges(); sel.addRange(r);
+});
+await page.waitForTimeout(120);
+snapR = await snapshots(); snap = snapR.snaps;
+check(Array.isArray(snap) && snap.length === 1, 'host-clear to empty root logs RESET-TO-EMPTY but does NOT persist a snapshot (still ' + (Array.isArray(snap) ? snap.length : '?') + ')');
+
+// --- v2: pointerdown outside the composer resets the jump window ---
+// (capture 1-2: taps on the send button legitimately precede host clears)
+await page.evaluate(() => {
+  document.body.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }));
+  const edit = document.querySelector('#__qol_edit');
+  edit.textContent = 'z'.repeat(20);
+  const sel = window.getSelection();
+  const r = document.createRange();
+  r.setStart(edit.firstChild, 20); r.setEnd(edit.firstChild, 20);
+  sel.removeAllRanges(); sel.addRange(r);
+});
+await page.waitForTimeout(120);
+snapR = await snapshots(); snap = snapR.snaps;
+check(Array.isArray(snap) && snap.length === 1, 'pointerdown outside the seat suppresses jump capture within the 400ms window');
+
+// --- v2: characterData mutations are recorded (programmatic text edits) ---
+// in-place text-node rewrite (no childList change) — then force a genuine
+// jump so the captured log proves the charData-mutate line was recorded
+await page.evaluate(() => {
+  const edit = document.querySelector('#__qol_edit');
+  edit.firstChild.data = 'z'.repeat(25); // in-place rewrite 20→25
+  const sel = window.getSelection();
+  const r = document.createRange();
+  r.setStart(edit.firstChild, 3); r.setEnd(edit.firstChild, 3);
+  sel.removeAllRanges(); sel.addRange(r);
+});
+await page.waitForTimeout(500); // let the pointer window elapse
+await teleportTo(25);
+await page.waitForTimeout(120);
+snapR = await snapshots(); snap = snapR.snaps;
+last = Array.isArray(snap) && snap.length ? snap[snap.length - 1] : null;
+logText = last ? last.log.join('\n') : '';
+check(logText.includes('charData-mutate'), 'charData-mutate recorded with length metadata');
+
 // snapshot cap: 2 more teleports (start↔end) → still at most 3 captures
-await teleportTo(0);   // end→start (20→0, boundary, ≥4 chars) → capture
+await teleportTo(0);   // end→start (25→0, boundary, ≥4 chars) → capture
 await page.waitForTimeout(100);
-await teleportTo(20);  // start→end → capture
+await teleportTo(25);  // start→end → capture
 await page.waitForTimeout(100);
 snapR = await snapshots(); snap = snapR.snaps;
 if (snapR.parseError) console.log('  (snapshot read error: ' + snapR.parseError + ')');
