@@ -11,7 +11,6 @@
 //   C. with the feature attribute removed, touch dragstart passes through
 //   D. after dispose(), the dragstart listener is gone (clean page)
 //
-// The caret-debug instrumentation is covered separately by e2e/caret-debug.mjs.
 // The settings-panel export UI is covered by test-settings-features.mjs
 // territory and not exercised here (mock harness has slots=null).
 //

@@ -1,6 +1,6 @@
 // Real-instance verification: dsh-qol is linked into the running 4175
 // instance, so the updated lib/client.js is live after a refresh. This drives
-// the REAL tabbar / sidebar-rail / sidebar-row switch paths on a mobile
+// the REAL tabbar / sidebar-row switch paths on a mobile
 // viewport and asserts the composer never ends up focused (IME kept closed).
 import pw from '/root/projects/camoufox-mcp/node_modules/playwright-core/index.js';
 const { firefox } = pw;
@@ -35,7 +35,7 @@ console.log('  ' + JSON.stringify(env));
 check(env.pluginLive, 'plugin style tag live on 4175');
 check(env.attrs.includes('data-qol-switch-nofocus'), 'switch-nofocus attr on');
 check(env.hasTabbar, 'tabbar rendered');
-check(env.hasRail, 'sidebar rail rendered');
+check(!env.hasRail, 'sidebar rail removed');
 check(env.composer, 'composer textarea present');
 
 // Probe: does the composer end up focused right now?

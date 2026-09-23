@@ -3,7 +3,7 @@
 // __ModuleLoader__ harness, calls apply() with a mock ctx, and verifies:
 //   - load no error
 //   - CSS style tag injected (data-plugin-css="dsh-qol")
-//   - 14 html[data-qol-*] attributes set (defaults all on; the temporary caret-debug diagnostics default OFF)
+//   - 12 html[data-qol-*] attributes set (13 features total, defaults all on except settings-remember-tab)
 //   - viewport meta extended (interactive-widget + viewport-fit=cover)
 //   - gesture: synthetic touch swipe right → layout.toggleSidebar called;
 //     skip when on form controls / below threshold. NOTE: the gesture block
@@ -115,8 +115,8 @@ console.log('\n=== CHECKS ===');
 check(!result.error, 'plugin loads without error' + (result.error ? ' (' + result.error + ')' : ''));
 check(result.inject && result.inject[0] === 'slots', 'inject declares slots');
 check(result.styleTag === true, 'CSS style tag injected');
-check(result.attrs.length >= 14 && result.attrs.includes('data-qol-settings-remember-tab') && result.attrs.includes('data-qol-no-touch-drag'),
-  'feature attributes set incl. settings-remember-tab and no-touch-drag  (got ' + result.attrs.length + ')');
+check(result.attrs.length === 12 && !result.attrs.includes('data-qol-settings-remember-tab') && result.attrs.includes('data-qol-no-touch-drag'),
+  '12 feature attributes set incl. no-touch-drag and excl. settings-remember-tab (got ' + result.attrs.length + ')');
 check(result.viewportContent && result.viewportContent.includes('interactive-widget=resizes-content'), 'viewport meta has interactive-widget=resizes-content');
 check(result.viewportContent && result.viewportContent.includes('viewport-fit=cover'), 'viewport meta has viewport-fit=cover');
 check(result.viewportFlag === '1', 'viewport meta flagged as extended');

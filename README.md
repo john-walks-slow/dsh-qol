@@ -5,8 +5,7 @@
   <a href="./README.en.md"><strong>English</strong></a>
 </p>
 
-dsh（DeepSeek Harness）Web GUI 体验优化插件：会话 Tab Bar、侧栏滑动开合、输入法/键盘适配、触摸反馈、设置页全屏重写等 **14 项功能**（另含 1 项临时诊断开关），每项都可在 **设置 → QoL** 独立开关，即时生效、按浏览器持久保存。移动端为主，部分功能（Tab Bar、状态动画等）桌面端同样生效。
-
+dsh（DeepSeek Harness）Web GUI 体验优化插件：会话 Tab Bar、侧栏滑动开合、输入法/键盘适配、触摸反馈、设置页全屏重写等 **13 项功能**，每项都可在 **设置 → QoL** 独立开关，即时生效、按浏览器持久保存。移动端为主，部分功能（Tab Bar、状态动画等）桌面端同样生效。
 
 ![dsh-qol: mobile tab bar and desktop views of the DeepSeek Harness web UI](assets/hero.png)
 
@@ -18,17 +17,15 @@ dsh（DeepSeek Harness）Web GUI 体验优化插件：会话 Tab Bar、侧栏滑
 | 侧栏滑动开合 | **全屏范围**右滑展开、左滑收起侧边栏（64px 阈值触发、不跟手；左缘 16px 让位系统返回手势；输入框/横向滚动区跳过；对话框打开时不响应；按钮上滑动安全——滑动不会误触 click） | 开 |
 | 禁用触摸长按拖拽 | Android 长按侧栏会话行会触发系统拖拽（桌面排序功能的副作用），且 Chromium 触摸拖拽经常卡死、整页点不动只能刷新；触摸期间禁用原生 dragstart，**桌面鼠标拖拽排序不受影响**。触屏笔记本上手指拖拽排序同样被禁（鼠标/触控板排序不受影响） | 开 |
 | 侧栏覆盖不挤宽 | 移动端侧栏以浮层展开覆盖内容，不挤压主区域宽度导致重排 | 开 |
-| 侧栏折叠态最近会话 | 侧栏折叠时在搜索下方展示最近活跃会话首字圆形图标，带状态角标 | 开 |
 | 切换会话收起侧栏 | 窄屏下在侧栏点选会话后自动收起侧栏，回到对话（仅 ≤768px） | 开 |
-| 切换会话不拉键盘 | 切换会话后不自动聚焦输入框、避免输入法弹出；侧栏会话行、活跃 Tab、折叠态 rail 图标、归档跳转全覆盖；直接点输入框仍可手动聚焦 | 开 |
+| 切换会话不拉键盘 | 切换会话后不自动聚焦输入框、避免输入法弹出；侧栏会话行、活跃 Tab、归档跳转全覆盖；直接点输入框仍可手动聚焦 | 开 |
 | 输入法/键盘适配 | viewport meta（`viewport-fit=cover` + `interactive-widget=resizes-content`）、`100dvh` 高度链、composer 安全区、iOS `visualViewport` CSS 变量兜底（**不改元素尺寸/字号**） | 开 |
 | 按钮触摸反馈 | `touch-action: manipulation`（杀 300ms 延迟与双击缩放）、关闭系统点击灰闪、`:active` 按压反馈、iOS `:active` 修复、`prefers-reduced-motion` 尊重（**不改元素尺寸**） | 开 |
 | 设置页全屏重写 | 设置对话框在 ≤768px 下全屏堆叠、标签横滚、修复标签塌宽 bug、safe-area 适配 | 开 |
-| 设置页记忆页签 | 打开设置时自动恢复上次选中的页签，避免每次重置回 General | 开 |
+| 设置页记忆页签 | 打开设置时自动恢复上次选中的页签，避免每次重置回 General | 关 |
 | 代码块/表格内滚 | 长代码与表格在容器内横向滚动，正文 break-word 不溢出 | 开 |
 | 隐藏权限选择下拉 | 隐藏输入框内的权限（Access mode）下拉触发器，省横向空间；模型选择与上下文用量不受影响 | 开 |
 | 状态指示动画优化 | 将 SVG opacity 追逐点动画替换为 CSS transform 脉冲，走合成器线程，零主线程开销。rAF 实测 idle FPS 35→55 | 开 |
-| 光标跳变调试（临时） | 定位「编辑中光标跳末尾」问题（疑似上游 Lexical Android 输入法缺陷）：记录 composition/selection/焦点**事件元数据（不含输入内容）**，光标无操作跳变时自动捕获现场（最多 3 次），设置页可复制日志导出。定位后移除。默认**关闭**，复现前请在设置中开启 | 关 |
 
 ## 安装
 
@@ -49,8 +46,8 @@ dsh plugin --profile web add github:john-walks-slow/dsh-qol
 ## 使用
 
 1. 打开 dsh Web GUI（移动端体验最佳）。
-2. 设置 → **QoL**：14 行功能开关 + 1 行临时诊断开关（名称 + 一行说明，诊断行下带日志复制按钮），点击**即时生效**，无需刷新页面。
-3. 配置自动持久保存到浏览器 `localStorage`（键 `dsh.qol.v1`），仅本浏览器生效；清掉该键即恢复全部默认开启。
+2. 设置 → **QoL**：13 行功能开关（名称 + 一行说明），点击**即时生效**，无需刷新页面。
+3. 配置自动持久保存到浏览器 `localStorage`（键 `dsh.qol.v1`），仅本浏览器生效；清掉该键即恢复默认配置。
 
 开关落盘的真实形态（`localStorage["dsh.qol.v1"]`）：
 
@@ -64,9 +61,8 @@ dsh plugin --profile web add github:john-walks-slow/dsh-qol
 
 - **纯客户端插件**：host 侧 `apply` 为空，**零 npm 运行时依赖**；全部逻辑在浏览器半（`lib/client.js`）执行
 - **零权限**：无外部服务、无网络请求、无文件系统写入、不读取会话内容——只改浏览器侧 CSS、DOM 事件与 viewport meta
-- **临时诊断开关例外**：「光标跳变调试」默认关闭；开启后仅记录输入框 composition/selection/焦点事件的**元数据**（composition 文本只记长度、不含内容），快照与日志仅存本浏览器 `localStorage`（键 `dsh.qol.caretdebug`），导出由用户手动触发
 - **配置不出浏览器**：开关状态仅存本浏览器 `localStorage`，不上传、不落盘到服务器
-- **桌面零影响**：移动专属规则全部锁在 `@media (max-width: 768px)`；跨端功能（Tab Bar、rail、状态动画）两端统一体验
+- **桌面零影响**：移动专属规则全部锁在 `@media (max-width: 768px)`；跨端功能（Tab Bar、状态动画）两端统一体验
 - **不改元素尺寸/字号**：有意设计约束（触摸反馈与 IME 适配均只动行为/合成层）
 - **降级不阻断**：所有宿主服务取值 `ctx.get()` + try/catch，服务缺失只 `console.warn` 降级；结构锚选择器若随宿主改版失配，对应规则静默不生效，页面不受影响
 - **与 dsh-web-mobile-fix 可共存**（见下）
