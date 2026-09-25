@@ -44,6 +44,17 @@ try {
   check(env.pluginLive, 'plugin style tag live');
   check(env.jumpAttr === 'on', 'data-qol-jump-user-msg="on" set on <html>');
   check(env.composer, 'composer present');
+  // Invariant at rest: the anchor exists ⟺ the conversation can scroll.
+  // Fresh hero (unscrollable) → absent; scrollable session (reused across
+  // runs) → present. Neither a stale anchor in hero nor a missing one in
+  // a tall session is acceptable.
+  const rest = await page.evaluate(() => {
+    const conv = document.querySelector('[data-conversation-scroll]');
+    if (!conv) return null;
+    return { scrollable: conv.scrollHeight > conv.clientHeight, anchor: !!conv.querySelector('.dsh-qol-jump-anchor') };
+  });
+  check(rest !== null && rest.anchor === rest.scrollable,
+    `initial state: anchor present ⟺ scrollable (${JSON.stringify(rest)})`);
 
   console.log('=== B. Build a tall conversation (3 user messages) ===');
   const sendMessage = async (text) => {
@@ -326,6 +337,39 @@ try {
   });
   check(Math.abs(afterD6b.scrollTop - Math.max(0, afterD6b.contentTop - 16)) <= 4 && afterD6b.text.includes('第二条'),
     `second click walks one row further (scrollTop ${afterD6b.scrollTop}, target "${afterD6b.text}")`);
+
+  console.log('=== D7. Lazy-load window: zero user rows in DOM → click flips to the very top ===');
+  // Long agent runs lazy-load history — the visible DOM may contain NO
+  // [data-chat-flow-kind="user"] rows while the session stays scrollable
+  // (agent-only sessions: forever). The button must REMAIN (the old
+  // :not(:has(user)) CSS hid it — the reported bug) and the click must
+  // flip to the top; scrolling up is exactly what nudges the host to
+  // fetch older history. Simulate the window by stripping the kind
+  // attribute (layout untouched), click, then restore.
+  await toBottom();
+  const strip = await page.evaluate(() => {
+    const conv = document.querySelector('[data-conversation-scroll]');
+    const rows = conv.querySelectorAll('[data-chat-flow-kind="user"]');
+    rows.forEach(r => { r.setAttribute('data-e2e-was-user', '1'); r.removeAttribute('data-chat-flow-kind'); });
+    return {
+      stripped: rows.length,
+      scrollable: conv.scrollHeight > conv.clientHeight,
+      jump: !!document.querySelector('.dsh-qol-jump-anchor .dsh-qol-jump-user')
+    };
+  });
+  check(strip.stripped >= 4, `stripped kind attr from ${strip.stripped} user rows`);
+  check(strip.scrollable, 'conversation still scrollable (lazy-load window shape)');
+  check(strip.jump, 'jump button STILL present with zero user rows (was: hidden by :not(:has(user)))');
+  const preD7 = await readScroll();
+  await clickJump();
+  const afterD7 = await readScroll();
+  check(preD7 > 1 && afterD7 <= 1, `click with zero user rows flips to the very top (${preD7} → ${afterD7})`);
+  await page.evaluate(() => {
+    document.querySelectorAll('[data-e2e-was-user]').forEach(r => {
+      r.setAttribute('data-chat-flow-kind', 'user');
+      r.removeAttribute('data-e2e-was-user');
+    });
+  });
 
   console.log('=== E. Toggle off hides the button ===');
   await page.evaluate(() => {
