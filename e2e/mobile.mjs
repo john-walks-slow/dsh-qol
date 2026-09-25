@@ -22,6 +22,8 @@
 import pw from '/root/projects/camoufox-mcp/node_modules/playwright-core/index.js';
 const { firefox } = pw;
 import fs from 'node:fs';
+import { guard } from './lib/run-guard.mjs';
+await guard();
 const CHROMIUM = '/root/.cache/camoufox/camoufox-bin';
 
 const mode = process.argv[2] || 'mobile';
@@ -31,10 +33,9 @@ const ua = isMobile
   ? 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1'
   : 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
 
-const TOKEN = process.env.DSH_E2E_TOKEN_4175;
-if (!TOKEN) { console.error('missing DSH_E2E_TOKEN_4175 — set it to the live 4175 instance token (printed by `dsh web`)'); process.exit(1); }
-const url = `http://127.0.0.1:4175/?token=${TOKEN}`;
-const src = fs.readFileSync('/root/projects/dsh-qol/lib/client.js', 'utf8');
+const TOKEN = process.env.DSH_E2E_TOKEN_4188 || 'e2etest';
+const url = `http://127.0.0.1:4188/?token=${TOKEN}`;
+const src = fs.readFileSync(new URL('../lib/client.js', import.meta.url), 'utf8');
 
 function assert(cond, msg) { if (!cond) throw new Error('ASSERT FAIL: ' + msg); }
 
@@ -63,7 +64,11 @@ const injectPlugin = async (target) => target.evaluate((pluginSrc) => {
     useState: (v) => [v, () => {}],
     useReducer: (r, s) => [s, () => {}]
   };
-  const req = (spec) => { if (spec === 'react') return mockReact; throw new Error('unknown require: ' + spec); };
+  const req = (spec) => {
+    if (spec === 'react') return mockReact;
+    if (spec === 'react-dom') return { createPortal: (n) => n };
+    throw new Error('unknown require: ' + spec);
+  };
 
   let plugin;
   try { plugin = captured.factory(req); } catch (e) { return { log, error: 'factory: ' + e.message }; }
@@ -78,7 +83,7 @@ const injectPlugin = async (target) => target.evaluate((pluginSrc) => {
         // service does this via narrowExpanded).
         toggleSidebar: () => {
           window.__qol.layoutToggles++;
-          const f = document.querySelector('[class*="_frame"]:has(> [class*="_sidebarCol\"])') || document.querySelector('[data-sidebar-collapsed]');
+          const f = document.querySelector('[data-qol-appframe]') || document.querySelector('[class*="_frame"]:has(> [class*="_sidebarCol"])') || document.querySelector('[data-sidebar-collapsed]');
           if (f) { if (f.hasAttribute('data-sidebar-collapsed')) f.removeAttribute('data-sidebar-collapsed'); else f.setAttribute('data-sidebar-collapsed', ''); }
         }
       };
@@ -115,8 +120,8 @@ console.log('\n=== CHECKS ===');
 check(!result.error, 'plugin loads without error' + (result.error ? ' (' + result.error + ')' : ''));
 check(result.inject && result.inject[0] === 'slots', 'inject declares slots');
 check(result.styleTag === true, 'CSS style tag injected');
-check(result.attrs.length === 14 && !result.attrs.includes('data-qol-settings-remember-tab') && result.attrs.includes('data-qol-no-touch-drag'),
-  '14 feature attributes set incl. no-touch-drag and excl. settings-remember-tab (got ' + result.attrs.length + ')');
+check(result.attrs && result.attrs.length === 14 && !result.attrs.includes('data-qol-settings-remember-tab') && result.attrs.includes('data-qol-no-touch-drag'),
+  '14 feature attributes set incl. no-touch-drag and excl. settings-remember-tab (got ' + (result.attrs ? result.attrs.length : 'n/a') + ')');
 check(result.viewportContent && result.viewportContent.includes('interactive-widget=resizes-content'), 'viewport meta has interactive-widget=resizes-content');
 check(result.viewportContent && result.viewportContent.includes('viewport-fit=cover'), 'viewport meta has viewport-fit=cover');
 check(result.viewportFlag === '1', 'viewport meta flagged as extended');
@@ -131,88 +136,167 @@ if (isMobile && !result.error) {
   gpage.on('pageerror', e => pageErrors.push(e.message));
   const gres = await injectPlugin(gpage);
   check(!gres.error, 'plugin loads on clean page without error' + (gres.error ? ' (' + gres.error + ')' : ''));
-  // run the block with `page` bound to the clean page (parameter shadows the app page); skip the cases entirely when the instance failed to load
+  // run the block with `page` bound to the clean page (parameter shadows the
+  // app page); skip the cases entirely when the instance failed to load
   if (!gres.error)
   await (async (page) => {
   // reset counter
   await page.evaluate(() => { window.__qol.layoutToggles = 0; });
 
-  // synthesize the sidebar frame the gesture logic reads (findSidebarFrame's
-  // structural anchor): starts collapsed, and the mock layout.toggleSidebar
-  // flips its data-sidebar-collapsed so sidebarOpen() tracks open/close
-  // across the two swipes
+  // Synthesize the overlay app frame the gesture reads (findSidebarFrame's
+  // structural anchor: a frame with a sidebarCol child). Starts collapsed; the
+  // mock layout.toggleSidebar flips data-sidebar-collapsed so sidebarOpen()
+  // tracks open/close. The overlay observer tags the frame with
+  // data-qol-appframe (rAF) after we insert it.
   await page.evaluate(() => {
     const frame = document.createElement('div');
     frame.className = 'fake_frame';
     frame.setAttribute('data-sidebar-collapsed', '');
     const col = document.createElement('div');
     col.className = 'fake_sidebarCol';
+    col.style.width = '280px';
+    col.style.height = '100%';
+    col.style.position = 'absolute';
+    col.style.left = '0';
+    col.style.top = '0';
     frame.appendChild(col);
+    const center = document.createElement('div');
+    center.className = 'fake_centerCol';
+    frame.appendChild(center);
     document.body.appendChild(frame);
   });
+  await page.waitForTimeout(80); // overlay observer rAF → tagAppFrame
 
-  // dispatch a right-swipe (open) from x=80 (past the 16px edge ignore).
-  // The plugin listens to Touch Events (not Pointer Events) so the browser
-  // cannot claim the stream for scrolling on real devices — dispatch TouchEvents.
-  const gestureSwipe = async (startX, startY, dx, targetSelector) => {
-    const target = await page.evaluate((sel) => {
-      if (!sel) return 'body';
-      const el = document.querySelector(sel);
-      return el ? sel : null;
-    }, targetSelector);
-    if (!target) { console.log('  (skip swipe on ' + targetSelector + ' — no such element)'); return false; }
-    await page.evaluate(({ sx, sy, dx, sel }) => {
+  // Read the drawer's live state (toggles, collapsed attr, inline override,
+  // scrim presence/visibility).
+  const drawerState = () => page.evaluate(() => {
+    const frame = document.querySelector('[data-qol-appframe]');
+    const col = frame ? frame.querySelector('[class*="_sidebarCol"]') : null;
+    const mask = document.querySelector('.qol-drawer-mask');
+    return {
+      toggles: window.__qol.layoutToggles,
+      collapsed: frame ? frame.hasAttribute('data-sidebar-collapsed') : null,
+      inlineX: col ? col.style.getPropertyValue('--qol-drawer-x') : null,
+      inlineTransition: col ? col.style.transition : null,
+      mask: !!mask,
+      maskShown: mask ? mask.classList.contains('qol-mask-shown') : false
+    };
+  });
+
+  // Finger-follow gesture helper. stepMs pauses between moves (busy-wait so
+  // Date.now() advances) — slow swipes settle by position, fast ones fling.
+  const gesture = async (opts) => {
+    const { sx, sy, dx, stepMs = 20, cancel = false, sel = null } = opts;
+    await page.evaluate(({ sx, sy, dx, stepMs, cancel, sel }) => {
       const node = sel ? document.querySelector(sel) : document.body;
       const mk = (x) => new Touch({ identifier: 1, target: node, clientX: x, clientY: sy });
       const fire = (type, x) => {
         const t = mk(x);
         node.dispatchEvent(new TouchEvent(type, { touches: [t], changedTouches: [t], targetTouches: [t], bubbles: true, cancelable: true }));
       };
+      const pause = (ms) => { const t0 = Date.now(); while (Date.now() - t0 < ms) {} };
       fire('touchstart', sx);
       const steps = 6;
-      for (let i = 1; i <= steps; i++) fire('touchmove', sx + (dx * i / steps));
-      fire('touchend', sx + dx);
-    }, { sx: startX, sy: startY, dx, sel: target });
-    await page.waitForTimeout(50);
-    return true;
+      for (let i = 1; i <= steps; i++) { fire('touchmove', sx + (dx * i / steps)); pause(stepMs); }
+      fire(cancel ? 'touchcancel' : 'touchend', sx + dx);
+    }, { sx, sy, dx, stepMs, cancel, sel });
+    await page.waitForTimeout(40);
   };
 
-  // dispatch on document.body — an Element (passes the instanceof Element
-  // guard), not a form control, not horizontally scrollable.
-  const ok = await gestureSwipe(80, 200, 80, null);
-  if (ok) {
-    const togglesAfterOpen = await page.evaluate(() => window.__qol.layoutToggles);
-    check(togglesAfterOpen === 1, 'right swipe (80px) toggles sidebar open (got ' + togglesAfterOpen + ')');
-  }
+  // A: slow right-swipe 200px — position 200 > 140 (280*0.5) settles open.
+  await gesture({ sx: 40, sy: 200, dx: 200, stepMs: 20 });
+  let st = await drawerState();
+  check(st.toggles === 1, 'slow right 200px settles OPEN (got toggles=' + st.toggles + ')');
+  check(st.collapsed === false, 'frame not collapsed after open');
+  check(st.mask && st.maskShown, 'scrim created + shown while open');
+  await page.waitForTimeout(420); // settle cleanup + mask fade settle
+  st = await drawerState();
+  check(st.inlineX === '', 'inline --qol-drawer-x cleaned up after settle');
+  check(st.mask === true, 'scrim stays while open');
 
-  const ok2 = await gestureSwipe(300, 200, -80, null);
-  if (ok2) {
-    const togglesAfterClose = await page.evaluate(() => window.__qol.layoutToggles);
-    check(togglesAfterClose === 2, 'left swipe (-80px) toggles sidebar close (got ' + togglesAfterClose + ')');
-  }
+  // B: slow left-swipe 200px (starts on the scrim) — position 80 < 140 closes.
+  await gesture({ sx: 300, sy: 200, dx: -200, stepMs: 20 });
+  st = await drawerState();
+  check(st.toggles === 2, 'slow left 200px settles CLOSED (got toggles=' + st.toggles + ')');
+  check(st.collapsed === true, 'frame collapsed after close');
+  await page.waitForTimeout(350); // mask fade-out
+  st = await drawerState();
+  check(st.mask === false, 'scrim removed after fade-out');
 
-  // below threshold — no toggle
-  await page.evaluate(() => { window.__qol.layoutToggles = 0; });
-  await gestureSwipe(80, 200, 40, null);
-  const togglesBelow = await page.evaluate(() => window.__qol.layoutToggles);
-  check(togglesBelow === 0, 'swipe below threshold (40px) does not toggle (got ' + togglesBelow + ')');
+  // C: slow 40px — below the 50% ratio, no toggle (rubber-bands back).
+  await gesture({ sx: 40, sy: 200, dx: 40, stepMs: 20 });
+  st = await drawerState();
+  check(st.toggles === 2 && st.collapsed === true, 'slow 40px does not toggle (got toggles=' + st.toggles + ')');
+  await page.waitForTimeout(420);
+  st = await drawerState();
+  check(st.inlineX === '', 'rubber-back inline override cleaned up');
 
-  // on a textarea — skip (create one if none exists)
+  // D: fast right 100px — fling (velocity > 0.5px/ms) opens even though the
+  //    release position (100 < 140) would close.
+  await gesture({ sx: 40, sy: 200, dx: 100, stepMs: 4 });
+  st = await drawerState();
+  check(st.toggles === 3, 'fast right 100px flings OPEN (got toggles=' + st.toggles + ')');
+
+  // E: fast left 100px — fling closes.
+  await gesture({ sx: 300, sy: 200, dx: -100, stepMs: 4 });
+  st = await drawerState();
+  check(st.toggles === 4, 'fast left 100px flings CLOSED (got toggles=' + st.toggles + ')');
+  await page.waitForTimeout(350);
+
+  // F: mid-drag the inline override tracks the finger (the finger-follow
+  //    core), rubber-banding past 280px: dx=400 → 280 + 120*0.25 = 310px.
   await page.evaluate(() => {
-    if (!document.querySelector('textarea')) {
-      const t = document.createElement('textarea');
-      t.id = '__qol_test_ta';
-      document.body.appendChild(t);
-    }
+    const node = document.body;
+    const mk = (x) => new Touch({ identifier: 1, target: node, clientX: x, clientY: 200 });
+    const fire = (type, x) => {
+      const t = mk(x);
+      node.dispatchEvent(new TouchEvent(type, { touches: [t], changedTouches: [t], targetTouches: [t], bubbles: true, cancelable: true }));
+    };
+    const pause = (ms) => { const t0 = Date.now(); while (Date.now() - t0 < ms) {} };
+    fire('touchstart', 40);
+    for (let i = 1; i <= 4; i++) { fire('touchmove', 40 + 100 * i); pause(20); }
   });
-  await page.evaluate(() => { window.__qol.layoutToggles = 0; });
-  const hasTA = await page.evaluate(() => !!document.querySelector('textarea'));
-  if (hasTA) {
-    await gestureSwipe(80, 200, 80, 'textarea#__qol_test_ta');
-    const togglesForm = await page.evaluate(() => window.__qol.layoutToggles);
-    check(togglesForm === 0, 'swipe starting on form control is skipped (got ' + togglesForm + ')');
-    await page.evaluate(() => document.getElementById('__qol_test_ta')?.remove());
-  }
+  st = await drawerState();
+  check(st.inlineX === '310px' && st.inlineTransition === 'none',
+    'rubber-band mid-drag holds 310px with transition:none (got ' + (st.inlineX || '(none)') + ')');
+  await page.evaluate(() => {
+    const node = document.body;
+    const t = new Touch({ identifier: 1, target: node, clientX: 440, clientY: 200 });
+    node.dispatchEvent(new TouchEvent('touchend', { touches: [], changedTouches: [t], targetTouches: [], bubbles: true, cancelable: true }));
+  });
+  await page.waitForTimeout(40);
+  st = await drawerState();
+  check(st.toggles === 5, 'overscroll drag settles OPEN (got toggles=' + st.toggles + ')');
+  await page.waitForTimeout(420);
+  st = await drawerState();
+  check(st.inlineX === '', 'inline override cleaned after overscroll settle');
+
+  // G: touchcancel mid-drag — snaps to nearest target by position (no fling):
+  //    dragging left 100px from open leaves pos 180 > 140 → stays open.
+  await gesture({ sx: 200, sy: 200, dx: -100, stepMs: 20, cancel: true });
+  st = await drawerState();
+  check(st.toggles === 5 && st.collapsed === false, 'touchcancel snaps back to OPEN by position (toggles=' + st.toggles + ')');
+  await page.waitForTimeout(420);
+
+  // H: scrim tap closes.
+  await page.evaluate(() => {
+    const m = document.querySelector('.qol-drawer-mask');
+    if (m) m.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+  });
+  await page.waitForTimeout(60);
+  st = await drawerState();
+  check(st.toggles === 6 && st.collapsed === true, 'scrim tap closes (toggles=' + st.toggles + ')');
+
+  // I: form controls are skipped.
+  await page.evaluate(() => {
+    const t = document.createElement('textarea');
+    t.id = '__qol_test_ta';
+    document.body.appendChild(t);
+  });
+  await gesture({ sx: 40, sy: 200, dx: 200, sel: 'textarea#__qol_test_ta' });
+  st = await drawerState();
+  check(st.toggles === 6, 'swipe starting on form control is skipped (toggles=' + st.toggles + ')');
+  await page.evaluate(() => document.getElementById('__qol_test_ta')?.remove());
   })(gpage); // end clean-page gesture block (binds `page` to gpage)
   await gpage.close();
 }
