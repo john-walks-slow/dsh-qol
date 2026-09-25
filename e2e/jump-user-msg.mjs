@@ -113,7 +113,7 @@ try {
     const conv = document.querySelector('[data-conversation-scroll]');
     const toBottom = document.querySelector('button[class$="_toBottom"]');
     const jump = document.querySelector('.dsh-qol-jump-user');
-    const rectOf = (el) => { const r = el.getBoundingClientRect(); return { top: Math.round(r.top), bottom: Math.round(r.bottom), height: Math.round(r.height), x: Math.round(r.x), w: Math.round(r.width) }; };
+    const rectOf = (el) => { const r = el.getBoundingClientRect(); return { top: Math.round(r.top), bottom: Math.round(r.bottom), height: Math.round(r.height), x: Math.round(r.x), right: Math.round(r.right), w: Math.round(r.width) }; };
     return {
       scrollTop: conv ? Math.round(conv.scrollTop) : null,
       floor: conv ? conv.scrollHeight - conv.clientHeight : null,
@@ -131,6 +131,9 @@ try {
     `~8px gap between buttons (got ${btns.toBottom ? btns.toBottom.top - btns.jump.bottom : '-'})`);
   check(btns.jump && Math.abs(btns.jump.height - 34) <= 2 && btns.toBottom && Math.abs(btns.toBottom.height - 34) <= 2,
     `both buttons keep full 34x34 circle (jump ${btns.jump?.height}px, host ${btns.toBottom?.height}px)`);
+  const expectedRight = btns.jump ? btns.jump.right : null;
+  check(btns.toBottom && btns.jump && Math.abs(btns.jump.right - btns.toBottom.right) <= 2,
+    `jump right edge aligned with host button (jump.right ${btns.jump?.right}, host.right ${btns.toBottom?.right})`);
 
   console.log('=== D. One user message per click (top-aligned semantics) ===');
   const clickJump = async () => {
@@ -251,7 +254,7 @@ try {
       scrollTop: conv ? Math.round(conv.scrollTop) : null,
       floor: conv ? conv.scrollHeight - conv.clientHeight : null,
       toBottom: !!toBottom,
-      jump: r ? { top: Math.round(r.top), bottom: Math.round(r.bottom), height: Math.round(r.height) } : null
+      jump: r ? { top: Math.round(r.top), bottom: Math.round(r.bottom), height: Math.round(r.height), right: Math.round(r.right) } : null
     };
   });
   console.log('  ' + JSON.stringify(bottom));
@@ -259,6 +262,8 @@ try {
   check(!bottom.toBottom, 'host "回到底部" button hidden at the bottom');
   check(!!bottom.jump && Math.abs(bottom.jump.height - 34) <= 2,
     `our jump button STILL visible at the bottom (height ${bottom.jump?.height}px)`);
+  check(bottom.jump && expectedRight !== null && Math.abs(bottom.jump.right - expectedRight) <= 2,
+    `jump keeps the host-aligned X at the bottom (right ${bottom.jump?.right}, expected ${expectedRight})`);
   const beforeBottom = bottom.scrollTop;
   await clickJump();
   const afterBottom = await readScroll();

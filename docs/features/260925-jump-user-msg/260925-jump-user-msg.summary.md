@@ -19,6 +19,7 @@
 
 1. **FEATURES 配置**：nav 组新增 `jump-user-msg`（label「上一条用户消息按钮」，default true，kind mixed）。
 2. **布局（v2 anchor 方案）**：不再往宿主插槽注入。注入独立的 `div.dsh-qol-jump-anchor`（`position:sticky; bottom:calc(var(--dsh-composer-height,152px) + 58px); height:0; display:flex; justify-content:flex-end; pointer-events:none; z-index:8`），内部 `.dsh-qol-jump-user` 按钮 34×34 `flex:none` + `margin-top:-34px` + `pointer-events:auto`，叠在宿主按钮上方 8px（58 = 宿主 bottom 16 + 按钮 34 + 间距 8）。
+   - **水平对齐（v3 修复）**：宿主按钮并不贴列右缘——`EvIC1a_scroll` 有 `padding:16px 32px`、插槽还有 `padding-right:max(0px, 50% - 340px)`（按钮右缘锚定在"列中心 + 340px"），宽窗口下距右缘上百像素；而 anchor 直挂 scroller（无 padding），`flex-end` 会把它顶到最右。`syncJumpX()` 实测 scroller 右缘与宿主按钮右缘的偏移，镜像为 anchor 的 `padding-right`（内联样式）；偏移缓存，宿主插槽在底部 unmount 后按钮保持同一 X；首次无实测值时按宿主公式兜底 `max(32, scrollerWidth/2 - 340)`。resize 与 body MutationObserver（rAF 去抖）都会重同步。
    - **底部常驻**：CSS `:has([class$="_toBottomSlot"])` 反向——宿主插槽存在时偏移 58px（按钮下方还有宿主按钮），宿主插槽因 atBottom unmount 时偏移降为 16px（占住宿主按钮自己的位置），保证**任何滚动位置都可见可点**。
    - **hero 无用户消息**：`[data-conversation-scroll]:not(:has([data-chat-flow-kind="user"]))` 时整个 anchor `display:none`。
 3. **按钮样式** `.dsh-qol-jump-user`：34×34 圆形（`flex:none` 防压扁），宿主 design token（`--dsw-alias-button-floating-fill` 背景、`--dsw-alias-button-floating-hover` hover、`--dsw-elevation-panel` 阴影），实心向上 chevron（`<svg viewBox="0 0 14 14"><path fill="currentColor" d="M11.8486 8.5L11.4238 8.07617L8.69727 5.34863C…L11.8486 8.5Z"/></svg>`，镜像宿主 IconChevronDownOutline14），aria-label/title「上一条用户消息」。
@@ -35,4 +36,4 @@
 
 ## E2E（e2e/jump-user-msg.mjs，目标 4188）
 
-真实发 2 条消息（mouse.click composer → keyboard.type → 点 Send；等回复完成才发下一条，流式期间 Send 变 Stop generating 不可发）；`page.mouse.wheel` 真实滚动（直接赋 scrollTop 被宿主判定为程序滚动，atBottom 不变按钮不出现）。覆盖：A 属性/样式加载；B 双用户消息构造；C wheel 上滚后两按钮 34×34（**变扁回归**）+ 8px 间距；D 两次点击到达第 2/第 1 条用户消息（scrollTop≈contentTop-16，≤4px 误差）+ 第三次点击翻到最顶；D2 wheel 回到底部：宿主按钮隐藏、跳转按钮**仍可见可点**且点击到达上一条；E 设置 toggle 关闭后属性与按钮均移除；F 无 page errors。
+真实发 2 条消息（mouse.click composer → keyboard.type → 点 Send；等回复完成才发下一条，流式期间 Send 变 Stop generating 不可发）；`page.mouse.wheel` 真实滚动（直接赋 scrollTop 被宿主判定为程序滚动，atBottom 不变按钮不出现）。覆盖：A 属性/样式加载；B 双用户消息构造；C wheel 上滚后两按钮 34×34（**变扁回归**）+ 8px 间距 + **右缘水平对齐（v3 回归）**；D 两次点击到达第 2/第 1 条用户消息（scrollTop≈contentTop-16，≤4px 误差）+ 第三次点击翻到最顶；D2 wheel 回到底部：宿主按钮隐藏、跳转按钮**仍可见可点**且**X 保持对齐**、点击到达上一条；E 设置 toggle 关闭后属性与按钮均移除；F 无 page errors。
