@@ -22,6 +22,7 @@ All toggles in **Settings → QoL** are organized into 4 groups (click a group h
 | Sidebar overlay | On mobile the sidebar opens as an overlay covering content instead of squeezing the main area into a reflow | On |
 | Collapse sidebar on switch | On narrow screens, picking a session in the sidebar auto-collapses it and returns to the conversation (≤768px only) | On |
 | No keyboard on switch | Switching sessions never auto-focuses the input box, so the IME never pops up; covers sidebar session rows, active tabs and archive jumps; tapping the input box directly still focuses it manually | On |
+| Auto load older on top | Long sessions lazy-load history: arriving at the very top of the conversation auto-clicks the host's "Load earlier" pill with viewport anchored (no jump); one shot per arrival, re-arms after leaving the top | On |
 | Previous user message button | Adds a circular button right above the "Back to bottom" floating button (bottom-right); clicking it scrolls to the previous user message (the nearest one scrolled past above the viewport) for quick history review; click again to keep jumping up through a long conversation | On |
 | Pin workspace to top | Adds "Pin to top" / "Unpin" entries to the ⋯ menu on each workspace row in the sidebar: **multiple workspaces can be pinned**, pinned ones are fixed at the top of the list (order persisted server-side, surviving reloads) and show a small pin icon at the row's right edge; unpinning moves a workspace back after the pinned section | On |
 
