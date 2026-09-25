@@ -39,7 +39,7 @@ const load = await page.evaluate(() => ({
 }));
 console.log(JSON.stringify(load, null, 2));
 check(load.styleTag, 'CSS style tag injected (real plugin loaded)');
-check(load.attrs.length === 13, '13 feature attributes set (got ' + load.attrs.length + ')');
+check(load.attrs.length === 14, '14 feature attributes set (got ' + load.attrs.length + ')');
 check(load.viewport && load.viewport.includes('interactive-widget=resizes-content'), 'viewport meta extended');
 check(load.hasAppHeight, '--app-height var set');
 

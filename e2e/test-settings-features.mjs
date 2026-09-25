@@ -141,6 +141,73 @@ try {
   await page.waitForTimeout(800);
 
   if (qolOk) {
+    // 4.1 验证 QoL 分区已按 4 组组织（每组至少包含其核心功能；计数不写死，兼容并行新增功能）
+    console.log('Verifying QoL settings groups...');
+    const groupInfo = await page.evaluate(() => {
+      const groups = [...document.querySelectorAll('.dsh-qol-group')];
+      const modeRow = document.querySelector('.dsh-qol-moderow');
+      return {
+        totalHeaders: document.querySelectorAll('.dsh-qol-group-header').length,
+        totalRows: document.querySelectorAll('.dsh-qol-row').length,
+        modeRows: document.querySelectorAll('.dsh-qol-moderow').length,
+        modeRowGroup: modeRow && modeRow.parentElement ? modeRow.parentElement.getAttribute('data-group') : null,
+        groups: groups.map(g => ({
+          id: g.getAttribute('data-group'),
+          label: g.querySelector('.dsh-qol-group-label') ? g.querySelector('.dsh-qol-group-label').textContent.trim() : null,
+          rows: g.querySelectorAll('.dsh-qol-row').length,
+          collapsed: g.getAttribute('data-collapsed'),
+          labels: [...g.querySelectorAll('.dsh-qol-row')].map(r => r.textContent)
+        }))
+      };
+    });
+    console.log('Group Info:', JSON.stringify(groupInfo));
+    check(groupInfo.totalHeaders === 4, '4 group headers rendered');
+    check(groupInfo.totalRows >= 13, 'at least the 13 core toggle rows across groups');
+    const labelById = Object.fromEntries(groupInfo.groups.map(g => [g.id, g.label]));
+    check(labelById.nav === '导航与切换' && labelById.ime === '输入与键盘' && labelById.touch === '触摸与反馈' && labelById.display === '显示与设置页', 'group labels correct');
+    const rowCountById = Object.fromEntries(groupInfo.groups.map(g => [g.id, g.rows]));
+    check(rowCountById.nav >= 5 && rowCountById.ime >= 2 && rowCountById.touch >= 2 && rowCountById.display >= 4, 'each group holds its expected core features (extra features allowed)');
+    const sumCounts = Object.values(rowCountById).reduce((a, b) => a + b, 0);
+    check(sumCounts === groupInfo.totalRows, 'group row counts sum to the total (no row outside a group)');
+    check(groupInfo.modeRows <= 1 && (groupInfo.modeRowGroup === null || groupInfo.modeRowGroup === 'nav'), 'mode selector (if present) lives inside the nav group');
+    // 核心功能必须落在正确分组（按行文案定位）
+    const inGroup = (gid, label) => {
+      const g = groupInfo.groups.find(x => x.id === gid);
+      return g ? g.labels.some(t => t.includes(label)) : false;
+    };
+    check(inGroup('nav', '活跃会话 Tab Bar') && inGroup('nav', '切换会话不拉键盘'), 'nav group holds tab bar & switch behaviors');
+    check(inGroup('ime', '输入法/键盘适配') && inGroup('ime', '隐藏权限选择下拉'), 'ime group holds keyboard features');
+    check(inGroup('touch', '按钮触摸反馈') && inGroup('touch', '禁用触摸长按拖拽'), 'touch group holds touch features');
+    check(inGroup('display', '设置页记忆页签') && inGroup('display', '代码块/表格内滚'), 'display group holds settings-page & reading features');
+
+    // 4.2 折叠/展开交互：点击「触摸与反馈」标题 → 行隐藏且状态落盘；再点 → 恢复
+    console.log('Testing group collapse/expand...');
+    const clickTouchHeader = `(function(){
+      const header = [...document.querySelectorAll('.dsh-qol-group-header')].find(h => (h.querySelector('.dsh-qol-group-label') || {}).textContent === '触摸与反馈');
+      if (header) header.click();
+      return !!header;
+    })()`;
+    check(await page.evaluate(clickTouchHeader), 'touch group header found and clicked');
+    await page.waitForTimeout(300);
+    const collapsedState = await page.evaluate(() => {
+      const g = document.querySelector('.dsh-qol-group[data-group="touch"]');
+      const stored = JSON.parse(window.localStorage.getItem('dsh.qol.groups') || '{}');
+      return {
+        collapsedAttr: g ? g.getAttribute('data-collapsed') : null,
+        rowDisplay: g && g.querySelector('.dsh-qol-row') ? getComputedStyle(g.querySelector('.dsh-qol-row')).display : null,
+        stored: stored.touch
+      };
+    });
+    check(collapsedState.collapsedAttr === 'true' && collapsedState.rowDisplay === 'none', 'collapsed group hides its rows');
+    check(collapsedState.stored === true, 'collapse state persisted to localStorage');
+    check(await page.evaluate(clickTouchHeader), 'touch group header clicked again to re-expand');
+    await page.waitForTimeout(300);
+    const reExpanded = await page.evaluate(() => {
+      const g = document.querySelector('.dsh-qol-group[data-group="touch"]');
+      return g ? getComputedStyle(g.querySelector('.dsh-qol-row')).display : null;
+    });
+    check(reExpanded === 'flex', 'group re-expands on second click');
+
     const rememberRow = await page.evaluate(() => {
       const rows = [...document.querySelectorAll('.dsh-qol-row')];
       const row = rows.find(r => r.textContent.includes('设置页记忆页签'));

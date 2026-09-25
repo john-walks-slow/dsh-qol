@@ -5,26 +5,45 @@
   <a href="./README.en.md"><strong>English</strong></a>
 </p>
 
-Quality-of-life tweaks for the DeepSeek Harness (dsh) Web GUI: a session tab bar, sidebar swipe gestures, IME/keyboard adaptation, touch feedback, a full-screen settings rewrite and more — **13 features**, each independently toggleable from **Settings → QoL**, taking effect instantly and persisted per browser. Mobile-first; some features (tab bar, status animation, etc.) apply on desktop too.
+Quality-of-life tweaks for the DeepSeek Harness (dsh) Web GUI: a session tab bar, sidebar swipe gestures, IME/keyboard adaptation, touch feedback, a full-screen settings rewrite and more — **each independently toggleable** from **Settings → QoL**, taking effect instantly and persisted per browser. Mobile-first; some features (tab bar, status animation, etc.) apply on desktop too.
 
 ![dsh-qol: mobile tab bar and desktop views of the DeepSeek Harness web UI](assets/hero.png)
 
 ## Features
 
+All toggles in **Settings → QoL** are organized into 4 groups (click a group header to collapse it):
+
+### Navigation & switching
+
 | Feature | Description | Default |
 |---|---|---|
 | Active-session Tab Bar | Horizontally shows session tabs at the top of the page; one-tap switching, no accidental keyboard pull-up; fresh sessions show as "New Session" until the first message is sent; **the + button is pinned at the bar's right edge** (it never scrolls away). **Display mode** (switchable in Settings → QoL): **Standard** = only user-opened sessions in fixed open order, middle-click/× to close; **Recent** = every real session auto-listed — colored-status ones (yellow = awaiting you, green = finished unread, blue = running) as a group first with the **longest-waiting leftmost** (a FIFO work queue), idle ones after with the **newest leftmost**; no close buttons, re-ranked live as states change | On (mode defaults to Standard) |
 | Sidebar swipe | Expand the sidebar by swiping right and collapse by swiping left **anywhere on screen** (64px threshold, non-following; the left 16px edge yields to the system back gesture; input fields / horizontal scrollers skipped; no response while a dialog is open; swiping over buttons is safe — it never triggers a click) | On |
-| Disable touch long-press drag | On Android, long-pressing a sidebar session row triggers a system drag (a side effect of the desktop reorder feature), and Chromium touch drags frequently hang the page — nothing responds until reload; dragstart is cancelled while touching, so **desktop mouse drag-reorder is unaffected**. Finger drag-reordering on touch-screen laptops is also disabled (mouse/trackpad reordering still works) | On |
 | Sidebar overlay | On mobile the sidebar opens as an overlay covering content instead of squeezing the main area into a reflow | On |
 | Collapse sidebar on switch | On narrow screens, picking a session in the sidebar auto-collapses it and returns to the conversation (≤768px only) | On |
 | No keyboard on switch | Switching sessions never auto-focuses the input box, so the IME never pops up; covers sidebar session rows, active tabs and archive jumps; tapping the input box directly still focuses it manually | On |
+
+### Input & keyboard
+
+| Feature | Description | Default |
+|---|---|---|
 | IME/keyboard adaptation | viewport meta (`viewport-fit=cover` + `interactive-widget=resizes-content`), a `100dvh` height chain, composer safe area, iOS `visualViewport` CSS-variable fallback (**never changes element sizes/fonts**) | On |
+| Hide permission dropdown | Hides the permission (Access mode) dropdown trigger inside the input box to save horizontal space; model selection and context usage are unaffected | On |
+
+### Touch & feedback
+
+| Feature | Description | Default |
+|---|---|---|
 | Touch feedback | `touch-action: manipulation` (kills the 300ms delay and double-tap zoom), disables the system tap highlight, `:active` press feedback, iOS `:active` fix, respects `prefers-reduced-motion` (**never changes element sizes**) | On |
+| Disable touch long-press drag | On Android, long-pressing a sidebar session row triggers a system drag (a side effect of the desktop reorder feature), and Chromium touch drags frequently hang the page — nothing responds until reload; dragstart is cancelled while touching, so **desktop mouse drag-reorder is unaffected**. Finger drag-reordering on touch-screen laptops is also disabled (mouse/trackpad reordering still works) | On |
+
+### Display & settings page
+
+| Feature | Description | Default |
+|---|---|---|
 | Full-screen settings rewrite | The settings dialog stacks full-screen at ≤768px with horizontally scrolling tabs, a collapsed-tab-width bugfix and safe-area adaptation | On |
 | Settings tab memory | Reopening settings restores the last selected tab instead of resetting to General | Off |
 | Code/table inner scroll | Long code blocks and tables scroll horizontally inside their containers; body text wraps without overflowing | On |
-| Hide permission dropdown | Hides the permission (Access mode) dropdown trigger inside the input box to save horizontal space; model selection and context usage are unaffected | On |
 | Status animation optimization | Replaces the SVG opacity chase-dot animation with a CSS transform pulse on the compositor thread, zero main-thread cost. Measured idle FPS via rAF: 35 → 55 | On |
 
 ## Install
@@ -46,8 +65,8 @@ dsh plugin --profile web add github:john-walks-slow/dsh-qol
 ## Usage
 
 1. Open the dsh Web GUI (best on mobile).
-2. Settings → **QoL**: 13 toggle rows (name + one-line description). Each click takes effect **instantly**, no page refresh needed.
-3. Toggles persist automatically in browser `localStorage` (key `dsh.qol.v1`) for this browser only; deleting that key restores the defaults.
+2. Settings → **QoL**: all toggles are organized into 4 groups (Navigation & switching / Input & keyboard / Touch & feedback / Display & settings page); click a group header to collapse it. Each click takes effect **instantly**, no page refresh needed.
+3. Toggles persist automatically in browser `localStorage` (key `dsh.qol.v1`) for this browser only; deleting that key restores the defaults. Group collapse state lives in a separate key, `dsh.qol.groups`.
 
 What a saved toggle set actually looks like (`localStorage["dsh.qol.v1"]`):
 
@@ -101,7 +120,7 @@ node e2e/integration.mjs       # Phase-2: real-plugin integration on a temp inst
 Note: e2e depends on a local camoufox + playwright-core (paths are hardcoded at the top of each script; adjust for your machine). This repo has no unit tests; `npm test` is intentionally not provided.
 
 - Feature docs: `docs/features/` (research / plan / validation / summary).
-- Adding a feature: register one entry in the `FEATURES` registry in `lib/client.js` plus its CSS block / JS hooks.
+- Adding a feature: register one entry in the `FEATURES` registry in `lib/client.js` (with its `group`, group order lives in `GROUPS`) plus its CSS block / JS hooks.
 
 ## License
 
