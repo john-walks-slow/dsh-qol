@@ -183,8 +183,8 @@ if (isMobile && !result.error) {
     };
   });
 
-  // Threshold-mode gesture helper. stepMs pauses between moves (busy-wait so
-  // Date.now() advances) — direction + distance past 64px fires the toggle.
+  // Finger-follow gesture helper. stepMs pauses between moves (busy-wait so
+  // Date.now() advances) — slow swipes settle by position, fast ones fling.
   const gesture = async (opts) => {
     const { sx, sy, dx, stepMs = 20, cancel = false, sel = null } = opts;
     await page.evaluate(({ sx, sy, dx, stepMs, cancel, sel }) => {
@@ -203,47 +203,48 @@ if (isMobile && !result.error) {
     await page.waitForTimeout(40);
   };
 
-  // A: right-swipe 200px — past the 64px threshold, triggers open.
+  // A: slow right-swipe 200px — position 200 > 140 (280*0.5) settles open.
   await gesture({ sx: 40, sy: 200, dx: 200, stepMs: 20 });
   let st = await drawerState();
-  check(st.toggles === 1, 'right 200px triggers OPEN (got toggles=' + st.toggles + ')');
+  check(st.toggles === 1, 'slow right 200px settles OPEN (got toggles=' + st.toggles + ')');
   check(st.collapsed === false, 'frame not collapsed after open');
   check(st.mask && st.maskShown, 'scrim created + shown while open');
-  await page.waitForTimeout(420); // open transition + mask fade settle
+  await page.waitForTimeout(420); // settle cleanup + mask fade settle
   st = await drawerState();
-  check(st.inlineX === '', 'no inline --qol-drawer-x written (no finger-follow)');
+  check(st.inlineX === '', 'inline --qol-drawer-x cleaned up after settle');
   check(st.mask === true, 'scrim stays while open');
 
-  // B: left-swipe 200px (starts on the scrim) — past threshold, triggers close.
+  // B: slow left-swipe 200px (starts on the scrim) — position 80 < 140 closes.
   await gesture({ sx: 300, sy: 200, dx: -200, stepMs: 20 });
   st = await drawerState();
-  check(st.toggles === 2, 'left 200px triggers CLOSED (got toggles=' + st.toggles + ')');
+  check(st.toggles === 2, 'slow left 200px settles CLOSED (got toggles=' + st.toggles + ')');
   check(st.collapsed === true, 'frame collapsed after close');
   await page.waitForTimeout(350); // mask fade-out
   st = await drawerState();
   check(st.mask === false, 'scrim removed after fade-out');
 
-  // C: 40px — below the 64px threshold, no toggle.
+  // C: slow 40px — below the 50% ratio, no toggle (rubber-bands back).
   await gesture({ sx: 40, sy: 200, dx: 40, stepMs: 20 });
   st = await drawerState();
-  check(st.toggles === 2 && st.collapsed === true, '40px below threshold does not toggle (got toggles=' + st.toggles + ')');
+  check(st.toggles === 2 && st.collapsed === true, 'slow 40px does not toggle (got toggles=' + st.toggles + ')');
   await page.waitForTimeout(420);
   st = await drawerState();
-  check(st.inlineX === '', 'no inline override left after sub-threshold drag');
+  check(st.inlineX === '', 'rubber-back inline override cleaned up');
 
-  // D: right 100px — past threshold, opens (velocity irrelevant now).
+  // D: fast right 100px — fling (velocity > 0.5px/ms) opens even though the
+  //    release position (100 < 140) would close.
   await gesture({ sx: 40, sy: 200, dx: 100, stepMs: 4 });
   st = await drawerState();
-  check(st.toggles === 3, 'right 100px triggers OPEN (got toggles=' + st.toggles + ')');
+  check(st.toggles === 3, 'fast right 100px flings OPEN (got toggles=' + st.toggles + ')');
 
-  // E: left 100px — past threshold, closes.
+  // E: fast left 100px — fling closes.
   await gesture({ sx: 300, sy: 200, dx: -100, stepMs: 4 });
   st = await drawerState();
-  check(st.toggles === 4, 'left 100px triggers CLOSED (got toggles=' + st.toggles + ')');
+  check(st.toggles === 4, 'fast left 100px flings CLOSED (got toggles=' + st.toggles + ')');
   await page.waitForTimeout(350);
 
-  // F: overscroll 400px — far past the threshold; fires the open exactly once
-  //    and leaves no inline override (no finger-follow writes mid-drag).
+  // F: mid-drag the inline override tracks the finger (the finger-follow
+  //    core), rubber-banding past 280px: dx=400 → 280 + 120*0.25 = 310px.
   await page.evaluate(() => {
     const node = document.body;
     const mk = (x) => new Touch({ identifier: 1, target: node, clientX: x, clientY: 200 });
@@ -254,23 +255,28 @@ if (isMobile && !result.error) {
     const pause = (ms) => { const t0 = Date.now(); while (Date.now() - t0 < ms) {} };
     fire('touchstart', 40);
     for (let i = 1; i <= 4; i++) { fire('touchmove', 40 + 100 * i); pause(20); }
+  });
+  st = await drawerState();
+  check(st.inlineX === '310px' && st.inlineTransition === 'none',
+    'rubber-band mid-drag holds 310px with transition:none (got ' + (st.inlineX || '(none)') + ')');
+  await page.evaluate(() => {
+    const node = document.body;
     const t = new Touch({ identifier: 1, target: node, clientX: 440, clientY: 200 });
     node.dispatchEvent(new TouchEvent('touchend', { touches: [], changedTouches: [t], targetTouches: [], bubbles: true, cancelable: true }));
   });
   await page.waitForTimeout(40);
   st = await drawerState();
-  check(st.toggles === 5 && st.collapsed === false, 'overscroll 400px triggers OPEN once (toggles=' + st.toggles + ')');
+  check(st.toggles === 5, 'overscroll drag settles OPEN (got toggles=' + st.toggles + ')');
   await page.waitForTimeout(420);
   st = await drawerState();
-  check(st.inlineX === '', 'no inline override left after threshold fire');
+  check(st.inlineX === '', 'inline override cleaned after overscroll settle');
 
-  // G: touchcancel after a short (< threshold) drag — no toggle, no residue.
-  await gesture({ sx: 40, sy: 200, dx: 30, stepMs: 20, cancel: true });
+  // G: touchcancel mid-drag — snaps to nearest target by position (no fling):
+  //    dragging left 100px from open leaves pos 180 > 140 → stays open.
+  await gesture({ sx: 200, sy: 200, dx: -100, stepMs: 20, cancel: true });
   st = await drawerState();
-  check(st.toggles === 5 && st.collapsed === false, 'touchcancel below threshold leaves state (toggles=' + st.toggles + ')');
+  check(st.toggles === 5 && st.collapsed === false, 'touchcancel snaps back to OPEN by position (toggles=' + st.toggles + ')');
   await page.waitForTimeout(420);
-  st = await drawerState();
-  check(st.inlineX === '', 'no inline override left after touchcancel');
 
   // H: scrim tap closes.
   await page.evaluate(() => {
