@@ -30,6 +30,7 @@ All toggles in **Settings → QoL** are organized into 4 groups (click a group h
 | Feature | Description | Default |
 |---|---|---|
 | IME/keyboard adaptation | viewport meta (`viewport-fit=cover` + `interactive-widget=resizes-content`), a `100dvh` height chain, composer safe area, iOS `visualViewport` CSS-variable fallback (**never changes element sizes/fonts**) | On |
+| Enter inserts newline | Enter in the input box inserts a newline instead of sending; send with Ctrl/⌘+Enter (steer/queue while the agent runs), Shift+Enter still inserts a newline; IME candidate confirmation and the @ menu are unaffected | Off |
 | Hide permission dropdown | Hides the permission (Access mode) dropdown trigger inside the input box to save horizontal space; model selection and context usage are unaffected | On |
 
 ### Touch & feedback

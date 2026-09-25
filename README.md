@@ -30,6 +30,7 @@ dsh（DeepSeek Harness）Web GUI 体验优化插件：会话 Tab Bar、侧栏滑
 | 功能 | 说明 | 默认 |
 |---|---|---|
 | 输入法/键盘适配 | viewport meta（`viewport-fit=cover` + `interactive-widget=resizes-content`）、`100dvh` 高度链、composer 安全区、iOS `visualViewport` CSS 变量兜底（**不改元素尺寸/字号**） | 开 |
+| 回车换行不发送 | 输入框内按 Enter 插入换行而不发送；Ctrl/⌘+Enter 发送（智能体运行时走插话/排队），Shift+Enter 仍为换行；输入法选词与 @ 菜单不受影响 | 关 |
 | 隐藏权限选择下拉 | 隐藏输入框内的权限（Access mode）下拉触发器，省横向空间；模型选择与上下文用量不受影响 | 开 |
 
 ### 触摸与反馈
