@@ -279,6 +279,54 @@ try {
   check(Math.abs(posB.scrollTop - Math.max(0, posB.contentTop - 16)) <= 4,
     `at-bottom click lands on the previous user message (scrollTop ${posB.scrollTop}, contentTop ${posB.contentTop}, target "${posB.targetText}")`);
 
+  console.log('=== D6. Bottom + LATEST message still visible: first click must act (never a clamped no-op) ===');
+  // A short trailing reply keeps the latest user message visible inside the
+  // bottom-pinned viewport BUT it cannot be brought to the top (target
+  // beyond the floor). The click must still DO something: walk to the
+  // previous row. (When the latest CAN be brought to the top, the click
+  // aligns it — the at-bottom locate path; when nothing can scroll at all
+  // — content shorter than one screen — a no-op is the only physical truth.)
+  const msg4 = '第四条-' + stamp + '，请只回复两个字：好的';
+  check(await sendMessage(msg4), '4th (short-reply) message typed & sent');
+  const r4 = await waitForDone(baseline + 4);
+  check(r4 !== null && r4.users >= baseline + 4, '4th user message delivered, reply finished');
+  await toBottom();
+  const preD6 = await page.evaluate(() => {
+    const conv = document.querySelector('[data-conversation-scroll]');
+    const users = [...conv.querySelectorAll('[data-chat-flow-kind="user"]')];
+    const last = users[users.length - 1];
+    const scRect = conv.getBoundingClientRect();
+    const contentTop = last.getBoundingClientRect().top - scRect.top + conv.scrollTop;
+    return { scrollTop: Math.round(conv.scrollTop), floor: Math.round(conv.scrollHeight - conv.clientHeight), lastTop: Math.round(contentTop), lastText: last.textContent.slice(0, 10) };
+  });
+  console.log('  ' + JSON.stringify(preD6));
+  check(preD6.scrollTop >= preD6.floor - 30, 'at the bottom');
+  check(preD6.lastTop > preD6.floor - 16, `latest message top cannot reach the viewport top (lastTop ${preD6.lastTop} ≥ floor-16 ${preD6.floor - 16} — short trailing reply)`);
+  await clickJump();
+  const afterD6 = await readScroll();
+  const posD6 = await page.evaluate(() => {
+    const conv = document.querySelector('[data-conversation-scroll]');
+    const users = [...conv.querySelectorAll('[data-chat-flow-kind="user"]')];
+    const target = users[users.length - 2]; // 第三条 = the row before the latest
+    const scRect = conv.getBoundingClientRect();
+    const contentTop = target.getBoundingClientRect().top - scRect.top + conv.scrollTop;
+    return { contentTop: Math.round(contentTop), text: target.textContent.slice(0, 10) };
+  });
+  check(afterD6 < preD6.scrollTop && Math.abs(afterD6 - Math.max(0, posD6.contentTop - 16)) <= 4,
+    `FIRST click acts: walks to the previous row (scrollTop ${preD6.scrollTop} → ${afterD6}, target "${posD6.text}") — never a clamped no-op`);
+  // second click: that row is now top-aligned → walks one row further
+  await clickJump();
+  const afterD6b = await page.evaluate(() => {
+    const conv = document.querySelector('[data-conversation-scroll]');
+    const users = [...conv.querySelectorAll('[data-chat-flow-kind="user"]')];
+    const target = users[users.length - 3]; // 第二条
+    const scRect = conv.getBoundingClientRect();
+    const contentTop = target.getBoundingClientRect().top - scRect.top + conv.scrollTop;
+    return { scrollTop: Math.round(conv.scrollTop), contentTop: Math.round(contentTop), text: target.textContent.slice(0, 10) };
+  });
+  check(Math.abs(afterD6b.scrollTop - Math.max(0, afterD6b.contentTop - 16)) <= 4 && afterD6b.text.includes('第二条'),
+    `second click walks one row further (scrollTop ${afterD6b.scrollTop}, target "${afterD6b.text}")`);
+
   console.log('=== E. Toggle off hides the button ===');
   await page.evaluate(() => {
     const railSettings = document.querySelector('button[class*="VOzbGW_rail"]');
