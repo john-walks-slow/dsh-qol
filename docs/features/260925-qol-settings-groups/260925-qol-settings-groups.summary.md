@@ -18,7 +18,7 @@
 全部改动在 `lib/client.js` + `e2e/test-settings-features.mjs` + README 中英双版：
 
 1. **FEATURES 加 group 字段并按组重排**：13 项核心功能全部带 `group`；新增 `GROUPS` 有序数组（nav → ime → touch → display，顺序即面板渲染顺序）。
-2. **QolPanel 分组渲染**：按 GROUPS 双循环渲染「组 div（`data-group` / `data-collapsed`）+ GroupHeader + 组内 ToggleRow」；ModeRow 仍在 active-tabbar 行下方、同属 nav 组；组标题右侧显示该项数（只计 ToggleRow）。
+2. **QolPanel 分组渲染**：按 GROUPS 双循环渲染「组 div（`data-group` / `data-collapsed`）+ GroupHeader + 组内 ToggleRow」；ModeRow 仍在 active-tabbar 行下方、同属 nav 组。（追加调整 2026-09-25 13:05：组标题右侧的「N 项」计数按用户要求移除。）
 3. **组标题可点击折叠**：`GroupHeader`（role=button / aria-expanded / Enter+Space 键盘支持），折叠状态存独立键 `dsh.qol.groups`（默认展开、try/catch 容错、数组值校验拒绝），老配置零迁移。
 4. **开关机制零改动**：`html[data-qol-*]` 属性总闸、`ToggleRow`、`onToggle`、`syncAllAttrs` 均未动，仅渲染结构变化。
 5. **分组 CSS**：`.dsh-qol-group*` 规则追加在 CSS 数组末尾、移动端 media query 之外（手机桌面共用）；折叠隐藏规则用 `!important` 压过 ToggleRow 内联 `display:flex`。
