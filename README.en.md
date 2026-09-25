@@ -13,7 +13,7 @@ Quality-of-life tweaks for the DeepSeek Harness (dsh) Web GUI: a session tab bar
 
 | Feature | Description | Default |
 |---|---|---|
-| Active-session Tab Bar | Horizontally shows active session tabs at the top of the page; unread/running tabs pinned first, one-tap switching, no accidental keyboard pull-up; fresh sessions show as "New Session"; middle-click/× to close (closing the last tab lands on a fresh session, and the fresh session itself cannot be closed); **the + button sits right after the last tab** (Chrome-style) | On |
+| Active-session Tab Bar | Horizontally shows session tabs at the top of the page; one-tap switching, no accidental keyboard pull-up; fresh sessions show as "New Session" until the first message is sent; **the + button is pinned at the bar's right edge** (it never scrolls away). **Display mode** (switchable in Settings → QoL): **Standard** = only user-opened sessions in fixed open order, middle-click/× to close; **Recent** = every real session auto-listed — colored-status ones (yellow = awaiting you, green = finished unread, blue = running) mixed by recency first, idle ones after, no close buttons, re-ranked live as states change | On (mode defaults to Standard) |
 | Sidebar swipe | Expand the sidebar by swiping right and collapse by swiping left **anywhere on screen** (64px threshold, non-following; the left 16px edge yields to the system back gesture; input fields / horizontal scrollers skipped; no response while a dialog is open; swiping over buttons is safe — it never triggers a click) | On |
 | Disable touch long-press drag | On Android, long-pressing a sidebar session row triggers a system drag (a side effect of the desktop reorder feature), and Chromium touch drags frequently hang the page — nothing responds until reload; dragstart is cancelled while touching, so **desktop mouse drag-reorder is unaffected**. Finger drag-reordering on touch-screen laptops is also disabled (mouse/trackpad reordering still works) | On |
 | Sidebar overlay | On mobile the sidebar opens as an overlay covering content instead of squeezing the main area into a reflow | On |
@@ -52,8 +52,10 @@ dsh plugin --profile web add github:john-walks-slow/dsh-qol
 What a saved toggle set actually looks like (`localStorage["dsh.qol.v1"]`):
 
 ```json
-{ "active-tabbar": true, "sidebar-gesture": true, "ime-viewport": true, "tap-feedback": true }
+{ "active-tabbar": true, "active-tabbar-mode": "recent", "sidebar-gesture": true, "ime-viewport": true, "tap-feedback": true }
 ```
+
+`active-tabbar-mode` is the tab bar's display mode (not a toggle): `"standard"` (default) or `"recent"`. You can also switch it via the **Display mode** segmented control under the "Active-session Tab Bar" toggle in Settings → QoL — it takes effect instantly.
 
 The implementation is an **attribute total-gate**: every feature maps to an `html[data-qol-<feature-id>]` attribute that both the CSS rules and the JS event handlers read — toggling just sets/removes the attribute, which is why it applies instantly with no reload.
 
