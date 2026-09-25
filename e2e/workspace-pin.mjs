@@ -13,7 +13,9 @@
 // NOTE: the test normalizes to [virtual-connect, ws-two] with an empty pinned
 // set at start and end, so it is idempotent across runs.
 // Usage: node e2e/workspace-pin.mjs
+import { guard } from './lib/run-guard.mjs';
 import pw from '/root/projects/camoufox-mcp/node_modules/playwright-core/index.js';
+import fs from 'node:fs';
 const { firefox } = pw;
 const CHROMIUM = '/root/.cache/camoufox/camoufox-bin';
 const url = 'http://127.0.0.1:4188/?token=e2etest';
@@ -23,6 +25,8 @@ function check(cond, msg) {
   if (cond) { pass++; console.log('  ✓ ' + msg); }
   else { fail++; console.error('  ✗ ' + msg); }
 }
+
+await guard();
 
 const browser = await firefox.launch({ executablePath: CHROMIUM, headless: true, args: ['--no-remote'] });
 try {
@@ -106,6 +110,32 @@ try {
       if (pin) pin.click();
     });
     await page.waitForTimeout(1200);
+  };
+
+  // Delete a workspace by title via its row ⋯ menu + confirmation dialog.
+  // Returns true when the deletion was confirmed (workspace gone).
+  const deleteWorkspace = async (title) => {
+    const order0 = await projectRowTitles();
+    const i = order0.indexOf(title);
+    if (i < 0) return false;
+    await openRowMenu(i);
+    await page.waitForTimeout(400);
+    await page.evaluate(() => {
+      const menus = [...document.querySelectorAll('[role="menu"]')];
+      const m = menus[menus.length - 1];
+      const items = [...m.querySelectorAll('[role="menuitem"]')];
+      const del = items.find(x => /Delete workspace|删除工作区/i.test(x.textContent));
+      if (del) del.click();
+    });
+    await page.waitForTimeout(800);
+    const confirmed = await page.evaluate(() => {
+      const d = document.querySelector('[role="dialog"][aria-modal="true"]');
+      const b = d ? [...d.querySelectorAll('button')].find(x => /Delete workspace|删除工作区/i.test((x.textContent || '').trim())) : null;
+      if (!b) return false;
+      b.click(); return true;
+    });
+    await page.waitForTimeout(2500);
+    return confirmed;
   };
 
   // --- normalize: clear pinned set (reload so the module reads it) and
@@ -299,6 +329,61 @@ try {
   order = await normalizeState('end');
   check(order[0] === 'virtual-connect', 'original order restored (first = virtual-connect)');
   check(await pinIconCount() === 0, 'pinned set cleared (no icons left)');
+
+  console.log('=== K. New workspace lands BELOW pinned section ===');
+  fs.mkdirSync('/root/.dsh-e2e/ws-three', { recursive: true });
+  await deleteWorkspace('ws-three'); // defensive: clear leftovers from crashed runs
+  order = await projectRowTitles();
+  const firstWs = order[0];
+  await openRowMenu(0);
+  await page.waitForTimeout(400);
+  const mK = await menuInfo();
+  if (mK && mK[0] && mK[0].pin && mK[0].text === 'Pin to top') {
+    await clickPinItem(); // pin the first workspace
+  }
+  await closeAnyMenu();
+  order = await projectRowTitles();
+  check(order[0] === firstWs, `first workspace pinned for the test (${firstWs})`);
+  // create ws-three via the Add-workspace directory dialog (.dsh-e2e is hidden)
+  await page.evaluate(() => { [...document.querySelectorAll('button')].find(x => (x.getAttribute('aria-label') || '').toLowerCase().includes('add workspace')).click(); });
+  await page.waitForTimeout(800);
+  await page.evaluate(() => {
+    const d = document.querySelector('[role="dialog"]');
+    const b = [...d.querySelectorAll('button')].find(x => (x.textContent || '').trim() === 'Show hidden files');
+    if (b) b.click();
+  });
+  await page.waitForTimeout(500);
+  const navK = await page.evaluate(() => {
+    const d = document.querySelector('[role="dialog"]');
+    const t = [...d.querySelectorAll('span[role="listitem"] button')].find(b => (b.textContent || '').trim() === '.dsh-e2e');
+    if (!t) return false;
+    t.click(); return true;
+  });
+  await page.waitForTimeout(800);
+  const pickK = await page.evaluate(() => {
+    const d = document.querySelector('[role="dialog"]');
+    const t = [...d.querySelectorAll('span[role="listitem"] button')].find(b => (b.textContent || '').trim() === 'ws-three');
+    if (!t) return false;
+    t.click(); return true;
+  });
+  await page.waitForTimeout(500);
+  const openK = await page.evaluate(() => {
+    const d = document.querySelector('[role="dialog"]');
+    const b = [...d.querySelectorAll('button')].find(x => (x.textContent || '').trim() === 'Open');
+    if (!b) return false;
+    b.click(); return true;
+  });
+  await page.waitForTimeout(2500);
+  order = await projectRowTitles();
+  const ws3i = order.indexOf('ws-three');
+  check(navK && pickK && openK, 'created ws-three via directory dialog');
+  check(ws3i > 0 && order[0] === firstWs, `new workspace below pinned section (order: ${order.join(' > ')})`);
+  check(await pinIconCount() > 0, 'pin icon still present on pinned workspace');
+  // cleanup: delete ws-three, clear the pinned set
+  const delK = await deleteWorkspace('ws-three');
+  order = await projectRowTitles();
+  check(delK && order.indexOf('ws-three') === -1, 'ws-three removed (cleanup)');
+  await page.evaluate(() => localStorage.removeItem('dsh.qol.pinned-ws'));
 
   const realErrors = pageErrors.filter(e => !/favicon|net::|ERR_/.test(e));
   check(realErrors.length === 0, `no page errors (${realErrors.length})`);
