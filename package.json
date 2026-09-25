@@ -1,7 +1,7 @@
 {
   "name": "dsh-qol",
   "version": "1.0.3",
-  "description": "Quality-of-life tweaks for the DeepSeek Harness Web UI: Chrome-style session tab bar, edge-swipe sidebar, IME/keyboard adaptation, touch feedback, full-screen mobile settings and more — 13 features, each independently toggleable from the Settings page, with instant effect and per-browser persistence. dsh Web GUI 体验优化插件：会话 Tab Bar、侧栏滑动开合、输入法/键盘适配、触摸反馈、移动端设置页全屏重写等 13 项功能，均可在设置页独立开关，即时生效并按浏览器持久保存。",
+  "description": "Quality-of-life tweaks for the DeepSeek Harness Web UI: Chrome-style session tab bar, edge-swipe sidebar, IME/keyboard adaptation, touch feedback, full-screen mobile settings and more — 14 features, each independently toggleable from the Settings page, with instant effect and per-browser persistence. dsh Web GUI 体验优化插件：会话 Tab Bar、侧栏滑动开合、输入法/键盘适配、触摸反馈、移动端设置页全屏重写等 14 项功能，均可在设置页独立开关，即时生效并按浏览器持久保存。",
   "license": "MIT",
   "type": "module",
   "main": "lib/index.js",

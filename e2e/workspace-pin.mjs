@@ -86,10 +86,13 @@ try {
   });
 
   const closeAnyMenu = async () => {
-    // Menus close on pointer leave / Escape; body click is unreliable.
+    // Click the main area (outside the sidebar), then Escape, then park the
+    // mouse far from any row — covers backdrop-click, closeOnPointerLeave
+    // and keyboard-dismissal variants of the host Menu.
+    await page.mouse.click(700, 400);
     await page.keyboard.press('Escape');
     await page.mouse.move(5, 5);
-    await page.waitForTimeout(350);
+    await page.waitForTimeout(400);
   };
 
   // --- normalize: ensure virtual-connect is first (idempotent across runs) ---
@@ -145,6 +148,7 @@ try {
   await closeAnyMenu();
 
   console.log('=== E. Session-row menu NOT injected ===');
+  await closeAnyMenu();
   const sessBox = await page.evaluate(() => {
     const r = [...document.querySelectorAll('[class*="sessionRow"]')][0];
     if (!r) return null;
@@ -152,8 +156,11 @@ try {
     return { x: b.x + b.width / 2, y: b.y + b.height / 2 };
   });
   if (sessBox) {
+    // approach in two moves to guarantee a real hover entry
+    await page.mouse.move(sessBox.x - 60, sessBox.y);
+    await page.waitForTimeout(150);
     await page.mouse.move(sessBox.x, sessBox.y);
-    await page.waitForTimeout(300);
+    await page.waitForTimeout(350);
   }
   const sessionMenu = await page.evaluate(async () => {
     const row = [...document.querySelectorAll('[class*="sessionRow"]')][0];
@@ -165,6 +172,7 @@ try {
     await new Promise(r => setTimeout(r, 500));
     const menus = [...document.querySelectorAll('[role="menu"]')];
     const m = menus[menus.length - 1];
+    if (!m) return { ok: false, reason: 'no menu after click' };
     const items = [...m.querySelectorAll('[role="menuitem"]')].map(it => it.textContent.trim());
     return { ok: true, items, pins: m.querySelectorAll('[data-qol-pin]').length };
   });
@@ -174,14 +182,16 @@ try {
   await closeAnyMenu();
 
   console.log('=== F. Picker menu NOT injected ===');
+  await closeAnyMenu();
   const pickerMenu = await page.evaluate(async () => {
     const btns = [...document.querySelectorAll('button')];
     const picker = btns.find(b => /^[A-Za-z0-9_-]+$/.test((b.textContent || '').trim()) && (b.className || '').includes('workspace'));
     if (!picker) return { ok: false, reason: 'no picker button' };
     picker.click();
-    await new Promise(r => setTimeout(r, 500));
+    await new Promise(r => setTimeout(r, 600));
     const menus = [...document.querySelectorAll('[role="menu"]')];
     const m = menus[menus.length - 1];
+    if (!m) return { ok: false, reason: 'no menu after picker click' };
     const items = [...m.querySelectorAll('[role="menuitem"]')].map(it => it.textContent.trim());
     return { ok: true, items, pins: m.querySelectorAll('[data-qol-pin]').length };
   });
@@ -205,7 +215,7 @@ try {
     await page.waitForTimeout(700);
   };
   const setPinToggle = async (on) => {
-    await page.evaluate((want) => {
+    const found = await page.evaluate((want) => {
       const rows = [...document.querySelectorAll('.dsh-qol-row')];
       const row = rows.find(r => (r.textContent || '').includes('工作区菜单置顶'));
       if (!row) return false;
@@ -215,6 +225,7 @@ try {
       return true;
     }, on);
     await page.waitForTimeout(500);
+    return found;
   };
 
   await openSettings();
