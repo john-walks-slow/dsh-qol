@@ -9,13 +9,17 @@
 //      tabs persist across reload
 //   5. Feature toggle off → host strip hidden instantly (attribute gate);
 //      toggle cycles produce NO React hook-count pageerrors (hooks-order fix)
-// Concurrency: GUI-driving e2e must run under the run lock —
-//   flock /tmp/dsh-e2e-run.lock node e2e/tabbar-mode.mjs
-// Usage: node e2e/tabbar-mode.mjs
+// Concurrency: run-level mutex is structural (2026-09-25) — guard() re-execs
+//   this script under flock /tmp/dsh-e2e-run.lock when run bare; dsh-e2e run
+//   holds the lock itself and marks DSH_E2E_RUN_GUARD=1.
+// Usage: node e2e/tabbar-mode.mjs   (or: dsh-e2e run e2e/tabbar-mode.mjs)
 import pw from '/root/projects/camoufox-mcp/node_modules/playwright-core/index.js';
+import { guard } from './lib/run-guard.mjs';
 const { firefox } = pw;
 const CHROMIUM = '/root/.cache/camoufox/camoufox-bin';
 const url = 'http://127.0.0.1:4188/?token=e2etest';
+
+await guard(); // must precede any browser/instance operation
 
 let pass = 0, fail = 0;
 function check(cond, msg) {

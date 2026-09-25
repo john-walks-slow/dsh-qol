@@ -85,4 +85,4 @@
 
 - 宿主 bundle 服务为**内存 rev 图**（`bundleResource` 只从 `responses`/`previousBatchResponses` 按 rev URL 服务），文件变更唯一入口是 client-hmr 插件的 500ms stat-poll 调 `rebuilt()`——关 HMR 不能解决问题，只会让实例冻结在启动快照、改码必须重启。
 - 真因是并发 agent（jump-user-msg 开发）同一时间在共享 4188 实例上跑它自己的 e2e（会话状态互踩 + 侧栏 byRecency 重排导致播种错位），且 13:13:29 有外部写盘 lib/client.js（疑似 stash 类瞬时回退工作树窗口，我的改动当时未提交，reload 撞上吃到无修订版本）。
-- 对策：**GUI 驱动型 e2e 需要 run 级互斥**——跑之前 `flock /tmp/dsh-e2e-run.lock` 包住整次运行（与实例启停锁 /tmp/dsh-e2e.lock 是两层，勿混用），跑完释放。目前仅 tabbar-mode.mjs 单方面遵守，锁要成为真互斥需写入 dsh-e2e skill 协议并让所有驱动型 e2e 脚本统一接入（待用户确认）；**改动过完 e2e 后尽快提交进 HEAD**，让对方 stash/checkout 瞬时回退只会回到含我代码的 HEAD。
+- 对策：**run 级互斥已结构性落地**（13:52 用户确认后实施，不再依赖模型自觉记得套 flock）：`dsh-e2e run` 子命令（持锁排队 + owner sidecar `/tmp/dsh-e2e-run.owner.json`）+ `e2e/lib/run-guard.mjs` 脚本自 guard（裸跑 self-reexec under flock，tabbar-mode.mjs 已接入并 53/53 复验）+ dsh-e2e skill 并发协议第 5 条 + e2e/AGENTS.md 模块指引；锁 `/tmp/dsh-e2e-run.lock` 与实例锁 `/tmp/dsh-e2e.lock` 两层勿混用。**改动过完 e2e 后尽快提交进 HEAD**，让对方 stash/checkout 瞬时回退只会回到含我代码的 HEAD。
