@@ -1,12 +1,13 @@
 // Verify composer-permission: hide the access-mode dropdown trigger on mobile.
-// Real 4175 instance (plugin linked, source-change = refresh-live).
+// Run via dsh-e2e run (worktree minimal instance).
 import pw from '/root/projects/camoufox-mcp/node_modules/playwright-core/index.js';
 import { guard } from './lib/run-guard.mjs';
 await guard(); // run-level mutex: this script switches tabs and drives session state
 const { firefox } = pw;
 const CHROMIUM = '/root/.cache/camoufox/camoufox-bin';
-const TOKEN = process.env.DSH_E2E_TOKEN_4175;
+const TOKEN = process.env.DSH_E2E_TOKEN;
 if (!TOKEN) { console.error('missing DSH_E2E_TOKEN — run via dsh-e2e run'); process.exit(1); }
+const url = `http://127.0.0.1:${process.env.DSH_E2E_PORT}/?token=${TOKEN}`;
 
 let pass = 0, fail = 0;
 function check(c, m) { if (c) { pass++; console.log('  ✓ ' + m); } else { fail++; console.log('  ✗ ' + m); } }
@@ -17,7 +18,7 @@ async function run(vp, ua, hasTouch) {
   const page = await ctx.newPage();
   const errs = [];
   page.on('pageerror', e => errs.push(e.message));
-  await page.goto(`http://127.0.0.1:4175/?token=${TOKEN}`, { waitUntil: 'domcontentloaded', timeout: 30000 });
+  await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 30000 });
   await page.waitForTimeout(6000);
   // switch to a non-active tab (a real session with the full composer)
   await page.evaluate(() => {

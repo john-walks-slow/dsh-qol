@@ -1,4 +1,4 @@
-// Tab bar display-mode E2E (target: e2e instance 4188, see /dsh-e2e skill).
+// Tab bar display-mode E2E (run via dsh-e2e run, see /dsh-e2e skill).
 // Verifies the 260925 changes (revised semantics):
 //   1. "+" button pinned OUTSIDE the tabs scroll container (fixed right)
 //   2. Settings → QoL gains a 标签显示模式 segmented row (标准 / 最近活跃)

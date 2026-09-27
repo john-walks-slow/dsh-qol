@@ -1,4 +1,4 @@
-// E2E for the enter-newline feature of dsh-qol (target: e2e instance 4188).
+// E2E for the enter-newline feature of dsh-qol (run via dsh-e2e run).
 //
 // Real-plugin, config-driven: writes the feature flag into localStorage
 // ("dsh.qol.v1"), reloads, and drives the REAL composer with the REAL keyboard

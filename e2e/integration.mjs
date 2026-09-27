@@ -1,4 +1,4 @@
-// Phase-2 integration E2E for dsh-qol on the temp 4176 instance.
+// Phase-2 integration E2E for dsh-qol on the worktree e2e instance.
 // The plugin is REALLY installed in the profile (real require("react"), real
 // ctx.slots, real settings.section). Verifies:
 //   - page loads, plugin apply ran (html attrs + style tag)

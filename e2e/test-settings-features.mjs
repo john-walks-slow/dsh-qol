@@ -3,9 +3,9 @@ import { guard } from './lib/run-guard.mjs';
 await guard(); // run-level mutex: this script toggles settings
 const { firefox } = pw;
 const CHROMIUM = '/root/.cache/camoufox/camoufox-bin';
-const TOKEN = process.env.DSH_E2E_TOKEN_4175;
+const TOKEN = process.env.DSH_E2E_TOKEN;
 if (!TOKEN) { console.error('missing DSH_E2E_TOKEN — run via dsh-e2e run'); process.exit(1); }
-const url = `http://127.0.0.1:4175/?token=${TOKEN}`;
+const url = `http://127.0.0.1:${process.env.DSH_E2E_PORT}/?token=${TOKEN}`;
 
 let pass = 0, fail = 0;
 function check(cond, msg) {

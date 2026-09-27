@@ -9,8 +9,15 @@
     "build": "node --check lib/index.js && node --check lib/client.js",
     "prepare": "npm run build",
     "release": "npm version patch && npm pack --pack-destination /tmp",
-    "e2e": "dsh-e2e run e2e/integration.mjs",
-    "e2e:tabbar": "dsh-e2e run e2e/tabbar-mode.mjs"
+    "e2e:integration": "dsh-e2e run e2e/integration.mjs",
+    "e2e:tabbar": "dsh-e2e run e2e/tabbar-mode.mjs",
+    "e2e:mobile": "dsh-e2e run e2e/mobile.mjs",
+    "e2e:settings": "dsh-e2e run e2e/test-settings-features.mjs",
+    "e2e:permission": "dsh-e2e run e2e/verify-permission.mjs",
+    "e2e:enter": "dsh-e2e run e2e/enter-newline.mjs",
+    "e2e:jump": "dsh-e2e run e2e/jump-user-msg.mjs",
+    "e2e:pin": "dsh-e2e run e2e/workspace-pin.mjs",
+    "e2e:real": "dsh-e2e run e2e/verify-real.mjs"
   },
   "exports": {
     ".": "./lib/index.js",

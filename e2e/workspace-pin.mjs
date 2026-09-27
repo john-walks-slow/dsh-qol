@@ -1,6 +1,6 @@
-// Workspace pin (工作区菜单置顶) E2E — target: e2e instance 4188 (see /dsh-e2e skill).
-// Requires ≥2 workspaces in the e2e home (setup: stop 4188, append a second
-// workspace record to /root/.dsh-e2e/storages/workspace.json, restart).
+// Workspace pin (工作区菜单置顶) E2E (run via dsh-e2e run).
+// Requires ≥2 workspaces in the e2e home: the script creates ws-three under
+// $DSH_E2E_HOME itself; add more via the GUI Add-workspace dialog if needed.
 // Verifies:
 //   1. Workspace ROW menu (⋯) gains a Pin to top / Unpin entry (injected menuitem)
 //   2. Pinning a workspace fixes it at the top of the sidebar list (host reorder

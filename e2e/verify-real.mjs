@@ -1,15 +1,14 @@
-// Real-instance verification: dsh-qol is linked into the running 4175
-// instance, so the updated lib/client.js is live after a refresh. This drives
-// the REAL tabbar / sidebar-row switch paths on a mobile
+// Real-path verification on the worktree e2e instance (dsh-e2e run).
+// Drives the REAL tabbar / sidebar-row switch paths on a mobile
 // viewport and asserts the composer never ends up focused (IME kept closed).
 import pw from '/root/projects/camoufox-mcp/node_modules/playwright-core/index.js';
 import { guard } from './lib/run-guard.mjs';
 await guard(); // run-level mutex: this script drives real sessions
 const { firefox } = pw;
 const CHROMIUM = '/root/.cache/camoufox/camoufox-bin';
-const TOKEN = process.env.DSH_E2E_TOKEN_4175;
+const TOKEN = process.env.DSH_E2E_TOKEN;
 if (!TOKEN) { console.error('missing DSH_E2E_TOKEN — run via dsh-e2e run'); process.exit(1); }
-const url = `http://127.0.0.1:4175/?token=${TOKEN}`;
+const url = `http://127.0.0.1:${process.env.DSH_E2E_PORT}/?token=${TOKEN}`;
 
 let pass = 0, fail = 0;
 function check(c, m) { if (c) { pass++; console.log('  ✓ ' + m); } else { fail++; console.log('  ✗ ' + m); } }
@@ -34,7 +33,7 @@ const env = await page.evaluate(() => ({
   composer: !!document.querySelector('[data-composer-seat] [contenteditable="true"]')
 }));
 console.log('  ' + JSON.stringify(env));
-check(env.pluginLive, 'plugin style tag live on 4175');
+check(env.pluginLive, 'plugin style tag live');
 check(env.attrs.includes('data-qol-switch-nofocus'), 'switch-nofocus attr on');
 check(env.hasTabbar, 'tabbar rendered');
 check(!env.hasRail, 'sidebar rail removed');

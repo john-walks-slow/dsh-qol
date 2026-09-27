@@ -1,4 +1,4 @@
-// jump-user-msg E2E (target: e2e instance 4188, see /dsh-e2e skill).
+// jump-user-msg E2E (run via dsh-e2e run, see /dsh-e2e skill).
 // Verifies the 260925 "上一条用户消息按钮" feature:
 //   1. html[data-qol-jump-user-msg] attribute set on load
 //   2. In a real conversation with ≥2 user messages: scrolling up with the
@@ -14,7 +14,7 @@
 //   5. Toggling the feature off in Settings hides the injected button
 // Usage: node e2e/jump-user-msg.mjs  (or dsh-e2e run e2e/jump-user-msg.mjs)
 import { guard } from './lib/run-guard.mjs';
-await guard(); // run-level mutex: this script sends messages / toggles settings on 4188
+await guard(); // run-level mutex: this script sends messages / toggles settings
 import pw from '/root/projects/camoufox-mcp/node_modules/playwright-core/index.js';
 const { firefox } = pw;
 const CHROMIUM = '/root/.cache/camoufox/camoufox-bin';
