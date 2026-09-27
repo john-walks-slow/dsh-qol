@@ -4,7 +4,8 @@ import { guard } from './lib/run-guard.mjs';
 await guard();
 import pw from '/root/projects/camoufox-mcp/node_modules/playwright-core/index.js';
 const { chromium } = pw;
-const url = 'http://127.0.0.1:4188/?token=e2etest';
+const url = process.env.DSH_E2E_URL ||
+  `http://127.0.0.1:${process.env.DSH_E2E_PORT || 4188}/?token=${process.env.DSH_E2E_TOKEN || 'e2etest'}`;
 
 const browser = await chromium.launch({ channel: undefined, executablePath: '/usr/bin/google-chrome', headless: true });
 try {

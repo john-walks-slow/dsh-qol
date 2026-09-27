@@ -40,7 +40,7 @@ export async function guard() {
     process.exit(1);
   }
   if (r.status !== 0) {
-    console.error(`[run-guard] run 锁获取失败（exit=${r.status ?? 'signal'}）——另一 GUI e2e 正在跑；调等待: DSH_E2E_RUN_WAIT=N`);
+    console.error(`[run-guard] 持锁执行退出码 ${r.status ?? 'signal:' + r.signal}（非 0；若上方无脚本自身输出，则是 run 锁获取超时——另一 GUI e2e 正在跑，可调 DSH_E2E_RUN_WAIT=N）`);
   }
   process.exit(r.status ?? 1);
 }

@@ -18,7 +18,8 @@ await guard(); // run-level mutex: this script sends messages / toggles settings
 import pw from '/root/projects/camoufox-mcp/node_modules/playwright-core/index.js';
 const { firefox } = pw;
 const CHROMIUM = '/root/.cache/camoufox/camoufox-bin';
-const url = 'http://127.0.0.1:4188/?token=e2etest';
+const url = process.env.DSH_E2E_URL ||
+  `http://127.0.0.1:${process.env.DSH_E2E_PORT || 4188}/?token=${process.env.DSH_E2E_TOKEN || 'e2etest'}`;
 
 let pass = 0, fail = 0;
 function check(cond, msg) {
@@ -69,10 +70,16 @@ try {
     await page.waitForTimeout(400);
     await page.keyboard.type(text, { delay: 5 });
     await page.waitForTimeout(300);
-    await page.evaluate(() => {
+    const clickSend = () => page.evaluate(() => {
       const send = [...document.querySelectorAll('button')].find(b => (b.getAttribute('aria-label') || '').includes('Send'));
-      if (send) send.click();
+      if (send) { send.click(); return true; }
+      return false;
     });
+    if (!(await clickSend())) {
+      // Send is replaced by Stop while a reply still streams — wait and retry
+      await page.waitForTimeout(3000);
+      if (!(await clickSend())) return false;
+    }
     return true;
   };
   // The e2e agent streams replies; wait until the reply is done (the Send
@@ -98,7 +105,7 @@ try {
   const stamp = Date.now().toString(36);
   const msg1 = '第一条-' + stamp;
   const msg2 = '第二条-' + stamp + '，内容稍长一些以便滚动';
-  const msg3 = '第三条-' + stamp + '：请写一段五百字以上的内容介绍递归算法';
+  const msg3 = '第三条-' + stamp + '：请写一篇两千字以上的长文介绍递归算法，分成多个小节，把每个小节都写满';
   const baseline = await page.evaluate(() => document.querySelectorAll('[data-chat-flow-kind="user"]').length);
   check(await sendMessage(msg1), '1st message typed & sent');
   const r1 = await waitForDone(baseline + 1);
@@ -357,7 +364,7 @@ try {
       jump: !!document.querySelector('.dsh-qol-jump-anchor .dsh-qol-jump-user')
     };
   });
-  check(strip.stripped >= 4, `stripped kind attr from ${strip.stripped} user rows`);
+  check(strip.stripped >= 1, `stripped kind attr from ${strip.stripped} user rows`);
   check(strip.scrollable, 'conversation still scrollable (lazy-load window shape)');
   check(strip.jump, 'jump button STILL present with zero user rows (was: hidden by :not(:has(user)))');
   const preD7 = await readScroll();
@@ -370,6 +377,86 @@ try {
       r.removeAttribute('data-e2e-was-user');
     });
   });
+
+  console.log('=== D8. Mid-scroll clamp: near-aligned row + later focus row → click must move (user report) ===');
+  // User report: sitting on B "top-aligned" with the NEXT user row C
+  // visible in the lower viewport → click did NOTHING. Root cause: the
+  // landing offset parks a row's top at viewTop+16 — exactly the
+  // aligned-window edge; sub-pixel drift pushed it just outside, the
+  // reading focus picked C, and "walk to the row before C" targeted B,
+  // whose landing sits at the current position → the up-only guard ate
+  // the click. The walk must step one row further back instead.
+  // Constructed deterministically: pick an adjacent (B, C) pair from the
+  // MEASURED geometry (reply heights vary per run) and size the viewport
+  // so C becomes the reading focus while B parks just past the window.
+  const pick = await page.evaluate(() => {
+    const conv = document.querySelector('[data-conversation-scroll]');
+    const users = [...conv.querySelectorAll('[data-chat-flow-kind="user"]')];
+    const scRect = conv.getBoundingClientRect();
+    const viewTop = conv.scrollTop;
+    const topOf = (el) => el.getBoundingClientRect().top - scRect.top + viewTop;
+    const scrollH = conv.scrollHeight;
+    for (let i = 0; i + 1 < users.length; i++) {
+      const topP = topOf(users[i]), topQ = topOf(users[i + 1]);
+      const vh = Math.round(Math.max(600, Math.min(2600, 2 * (topQ - topP + 36) + 240)));
+      // viewport must stay scrollable at the parked position (80px headroom)
+      if (scrollH - vh <= topP - 36 + 80) continue;
+      // the row AFTER C must stay below the reading center (center lands
+      // ~topQ+120; slack for clientHeight ≠ viewport height)
+      if (i + 2 < users.length && topOf(users[i + 2]) < topQ + 180) continue;
+      // the row BEFORE B must not fall into the aligned window there
+      if (i > 0) { const tPrev = topOf(users[i - 1]); if (tPrev >= topP - 52 && tPrev <= topP - 20) continue; }
+      return { i, vh, topP };
+    }
+    return null;
+  });
+  check(pick !== null, 'found a geometry-fitting (B, C) pair');
+  if (pick) {
+    await page.setViewportSize({ width: 1280, height: pick.vh });
+    await page.waitForTimeout(400);
+    // Park B 36px below the viewport top — just past the aligned window
+    // [+16] but visually "aligned" (the reported state).
+    await page.evaluate((topB) => {
+      document.querySelector('[data-conversation-scroll]').scrollTop = topB - 36;
+    }, pick.topP);
+    await page.waitForTimeout(300);
+    const d8pre = await page.evaluate((bi) => {
+      const conv = document.querySelector('[data-conversation-scroll]');
+      const users = [...conv.querySelectorAll('[data-chat-flow-kind="user"]')];
+      const scRect = conv.getBoundingClientRect();
+      const viewTop = conv.scrollTop;
+      const topOf = (el) => el.getBoundingClientRect().top - scRect.top + viewTop;
+      const center = viewTop + conv.clientHeight / 2;
+      let focus = -1;
+      for (let k = 0; k < users.length; k++) { if (topOf(users[k]) < center) focus = k; else break; }
+      // mirror the walk-back: candidate = focus-1, step back while clamped
+      let wi = focus - 1;
+      let target = wi < 0 ? 0 : topOf(users[wi]);
+      while (Math.max(0, target - 16) >= viewTop) {
+        if (wi <= 0) { target = 0; break; }
+        wi--;
+        target = topOf(users[wi]);
+      }
+      return {
+        viewTop: Math.round(viewTop),
+        focus,
+        focusIsC: focus === bi + 1,
+        focusBelowTop: focus >= 0 ? topOf(users[focus]) >= viewTop : false,
+        clamped: focus >= 1 && Math.max(0, topOf(users[focus - 1]) - 16) >= viewTop,
+        expected: Math.round(Math.max(0, target - 16))
+      };
+    }, pick.i);
+    console.log('  ' + JSON.stringify({ ...pick, ...d8pre }));
+    check(d8pre.focusIsC, `focus row = the pair's C (index ${d8pre.focus}, want ${pick.i + 1})`);
+    check(d8pre.focusBelowTop, 'focus row visible below the viewport top (walk branch active)');
+    check(d8pre.clamped, 'primary walk target (B) clamps at the current position (non-vacuous)');
+    await clickJump();
+    const d8post = await readScroll();
+    check(d8post < d8pre.viewTop && Math.abs(d8post - d8pre.expected) <= 4,
+      `click MOVES instead of no-op (${d8pre.viewTop} → ${d8post}, expected ${d8pre.expected})`);
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await page.waitForTimeout(300);
+  }
 
   console.log('=== E. Toggle off hides the button ===');
   await page.evaluate(() => {

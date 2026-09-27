@@ -16,13 +16,15 @@
 //
 // Usage: node e2e/no-touch-drag.mjs
 // Target defaults to the isolated e2e instance (see skill dsh-e2e):
-//   http://127.0.0.1:4188/?token=e2etest   (override with DSH_E2E_URL)
+//   http://127.0.0.1:4188/?token=e2etest
+// Override with DSH_E2E_URL, or DSH_E2E_PORT / DSH_E2E_TOKEN.
 import pw from '/root/projects/camoufox-mcp/node_modules/playwright-core/index.js';
 const { firefox } = pw;
 import fs from 'node:fs';
 const CHROMIUM = '/root/.cache/camoufox/camoufox-bin';
 
-const url = process.env.DSH_E2E_URL || 'http://127.0.0.1:4188/?token=e2etest';
+const url = process.env.DSH_E2E_URL ||
+  `http://127.0.0.1:${process.env.DSH_E2E_PORT || 4188}/?token=${process.env.DSH_E2E_TOKEN || 'e2etest'}`;
 const src = fs.readFileSync('/root/projects/dsh-qol/lib/client.js', 'utf8');
 
 let pass = 0, fail = 0;
