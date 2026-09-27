@@ -31,7 +31,7 @@ import { guard } from './lib/run-guard.mjs';
 const { firefox } = pw;
 const CHROMIUM = '/root/.cache/camoufox/camoufox-bin';
 const url = process.env.DSH_E2E_URL ||
-  `http://127.0.0.1:${process.env.DSH_E2E_PORT || 4188}/?token=${process.env.DSH_E2E_TOKEN || 'e2etest'}`;
+  `http://127.0.0.1:${process.env.DSH_E2E_PORT}/?token=${process.env.DSH_E2E_TOKEN || 'e2etest'}`;
 
 await guard(); // must precede any browser/instance operation
 

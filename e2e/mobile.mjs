@@ -34,7 +34,7 @@ const ua = isMobile
   : 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
 
 const url = process.env.DSH_E2E_URL ||
-  `http://127.0.0.1:${process.env.DSH_E2E_PORT || 4188}/?token=${process.env.DSH_E2E_TOKEN || 'e2etest'}`;
+  `http://127.0.0.1:${process.env.DSH_E2E_PORT}/?token=${process.env.DSH_E2E_TOKEN || 'e2etest'}`;
 const src = fs.readFileSync(new URL('../lib/client.js', import.meta.url), 'utf8');
 
 function assert(cond, msg) { if (!cond) throw new Error('ASSERT FAIL: ' + msg); }

@@ -11,9 +11,9 @@
 import pw from '/root/projects/camoufox-mcp/node_modules/playwright-core/index.js';
 const { firefox } = pw;
 const CHROMIUM = '/root/.cache/camoufox/camoufox-bin';
-const TOKEN = process.env.DSH_E2E_TOKEN_4176;
-if (!TOKEN) { console.error('missing DSH_E2E_TOKEN_4176 — set it to the temp 4176 instance token (printed by `dsh web --port 4176`)'); process.exit(1); }
-const url = `http://127.0.0.1:4176/?token=${TOKEN}`;
+const TOKEN = process.env.DSH_E2E_TOKEN;
+if (!TOKEN) { console.error('missing DSH_E2E_TOKEN — run via dsh-e2e run'); process.exit(1); }
+const url = `http://127.0.0.1:${process.env.DSH_E2E_PORT}/?token=${process.env.DSH_E2E_TOKEN || 'e2etest'}`;
 
 function assert(c, m) { if (!c) throw new Error('FAIL: ' + m); }
 let pass = 0, fail = 0;

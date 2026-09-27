@@ -4,7 +4,7 @@ import pw from '/root/projects/camoufox-mcp/node_modules/playwright-core/index.j
 const { firefox } = pw;
 const CHROMIUM = '/root/.cache/camoufox/camoufox-bin';
 const TOKEN = process.env.DSH_E2E_TOKEN_4175;
-if (!TOKEN) { console.error('missing DSH_E2E_TOKEN_4175 — set it to the live 4175 instance token (printed by `dsh web`)'); process.exit(1); }
+if (!TOKEN) { console.error('missing DSH_E2E_TOKEN — run via dsh-e2e run'); process.exit(1); }
 
 let pass = 0, fail = 0;
 function check(c, m) { if (c) { pass++; console.log('  ✓ ' + m); } else { fail++; console.log('  ✗ ' + m); } }

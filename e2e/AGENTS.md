@@ -2,7 +2,7 @@
 
 ## 职责
 
-面向 4188 隔离实例（dsh-e2e skill）的端到端测试脚本与共享工具。
+面向 worktree 最小 e2e 实例（dsh-e2e skill）的端到端测试脚本与共享工具。
 
 ## 地图
 
@@ -13,7 +13,7 @@
 
 ## 核心设计
 
-**run 级互斥（2026-09-25 起结构性强制）**：同一 4188 实例上，会改实例状态的 GUI e2e（切 current / 开关 tab / 发消息 / 触发 pendingInteraction）必须串行——并发互踩实证：播种会话被对方切走、断言吃到对方状态翻转。
+**run 级互斥（2026-09-25 起结构性强制）**：同一 worktree 实例上，会改实例状态的 GUI e2e（切 current / 开关 tab / 发消息 / 触发 pendingInteraction）必须串行——并发互踩实证：播种会话被对方切走、断言吃到对方状态翻转。
 
 - 首选：`dsh-e2e run e2e/x.mjs`（自动持锁排队，`--wait N` 默认 900s）
 - 或脚本内置 guard（裸跑也自动持锁）：
@@ -21,7 +21,7 @@
   import { guard } from './lib/run-guard.mjs';
   await guard(); // 顶部，先于任何浏览器/实例操作
   ```
-- 锁 `/tmp/dsh-e2e-run.lock`（flock 内核级，持有进程死亡即释放）；与实例锁 `/tmp/dsh-e2e.lock` 相互独立；持有者记录 `/tmp/dsh-e2e-run.owner.json`
+- 锁 `/tmp/dsh-e2e-run-<worktree>.lock`（flock 内核级，持有进程死亡即释放）；持有者记录 `/tmp/dsh-e2e-run-<worktree>.owner.json`；跨 worktree 天然并行
 - 只读 verify（curl / 纯观察）不受限
 
 **断言风格**（多 agent 并存下的可靠性）：

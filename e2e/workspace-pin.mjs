@@ -19,7 +19,7 @@ import fs from 'node:fs';
 const { firefox } = pw;
 const CHROMIUM = '/root/.cache/camoufox/camoufox-bin';
 const url = process.env.DSH_E2E_URL ||
-  `http://127.0.0.1:${process.env.DSH_E2E_PORT || 4188}/?token=${process.env.DSH_E2E_TOKEN || 'e2etest'}`;
+  `http://127.0.0.1:${process.env.DSH_E2E_PORT}/?token=${process.env.DSH_E2E_TOKEN || 'e2etest'}`;
 
 let pass = 0, fail = 0;
 function check(cond, msg) {
@@ -332,7 +332,7 @@ try {
   check(await pinIconCount() === 0, 'pinned set cleared (no icons left)');
 
   console.log('=== K. New workspace lands BELOW pinned section ===');
-  fs.mkdirSync('/root/.dsh-e2e/ws-three', { recursive: true });
+  fs.mkdirSync(`${process.env.DSH_E2E_HOME}/ws-three`, { recursive: true });
   await deleteWorkspace('ws-three'); // defensive: clear leftovers from crashed runs
   order = await projectRowTitles();
   const firstWs = order[0];

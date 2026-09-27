@@ -24,7 +24,7 @@ import fs from 'node:fs';
 const CHROMIUM = '/root/.cache/camoufox/camoufox-bin';
 
 const url = process.env.DSH_E2E_URL ||
-  `http://127.0.0.1:${process.env.DSH_E2E_PORT || 4188}/?token=${process.env.DSH_E2E_TOKEN || 'e2etest'}`;
+  `http://127.0.0.1:${process.env.DSH_E2E_PORT}/?token=${process.env.DSH_E2E_TOKEN || 'e2etest'}`;
 const src = fs.readFileSync('/root/projects/dsh-qol/lib/client.js', 'utf8');
 
 let pass = 0, fail = 0;
