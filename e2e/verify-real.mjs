@@ -3,6 +3,8 @@
 // the REAL tabbar / sidebar-row switch paths on a mobile
 // viewport and asserts the composer never ends up focused (IME kept closed).
 import pw from '/root/projects/camoufox-mcp/node_modules/playwright-core/index.js';
+import { guard } from './lib/run-guard.mjs';
+await guard(); // run-level mutex: this script drives real sessions
 const { firefox } = pw;
 const CHROMIUM = '/root/.cache/camoufox/camoufox-bin';
 const TOKEN = process.env.DSH_E2E_TOKEN_4175;

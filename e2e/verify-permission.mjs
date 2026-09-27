@@ -1,6 +1,8 @@
 // Verify composer-permission: hide the access-mode dropdown trigger on mobile.
 // Real 4175 instance (plugin linked, source-change = refresh-live).
 import pw from '/root/projects/camoufox-mcp/node_modules/playwright-core/index.js';
+import { guard } from './lib/run-guard.mjs';
+await guard(); // run-level mutex: this script switches tabs and drives session state
 const { firefox } = pw;
 const CHROMIUM = '/root/.cache/camoufox/camoufox-bin';
 const TOKEN = process.env.DSH_E2E_TOKEN_4175;

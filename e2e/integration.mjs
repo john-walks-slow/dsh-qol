@@ -9,6 +9,8 @@
 //   - gesture works against the REAL layout service
 //   - screenshots of settings page + gesture
 import pw from '/root/projects/camoufox-mcp/node_modules/playwright-core/index.js';
+import { guard } from './lib/run-guard.mjs';
+await guard(); // run-level mutex: this script drives a real session and toggles plugin state
 const { firefox } = pw;
 const CHROMIUM = '/root/.cache/camoufox/camoufox-bin';
 const TOKEN = process.env.DSH_E2E_TOKEN;

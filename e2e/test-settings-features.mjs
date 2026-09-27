@@ -1,4 +1,6 @@
 import pw from '/root/projects/camoufox-mcp/node_modules/playwright-core/index.js';
+import { guard } from './lib/run-guard.mjs';
+await guard(); // run-level mutex: this script toggles settings
 const { firefox } = pw;
 const CHROMIUM = '/root/.cache/camoufox/camoufox-bin';
 const TOKEN = process.env.DSH_E2E_TOKEN_4175;

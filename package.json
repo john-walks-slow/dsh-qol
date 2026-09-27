@@ -8,7 +8,9 @@
   "scripts": {
     "build": "node --check lib/index.js && node --check lib/client.js",
     "prepare": "npm run build",
-    "release": "npm version patch && npm pack --pack-destination /tmp"
+    "release": "npm version patch && npm pack --pack-destination /tmp",
+    "e2e": "dsh-e2e run e2e/integration.mjs",
+    "e2e:tabbar": "dsh-e2e run e2e/tabbar-mode.mjs"
   },
   "exports": {
     ".": "./lib/index.js",
