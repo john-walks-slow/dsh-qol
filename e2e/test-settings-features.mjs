@@ -173,19 +173,24 @@ try {
     check(sumCounts === groupInfo.totalRows, 'group row counts sum to the total (no row outside a group)');
     check(groupInfo.modeRows <= 1 && (groupInfo.modeRowGroup === null || groupInfo.modeRowGroup === 'nav'), 'mode selector (if present) lives inside the nav group');
     // 核心功能必须落在正确分组（按行文案定位）
-    const inGroup = (gid, label) => {
+    // The panel follows the host locale, so every label assertion accepts
+    // either dictionary (zh / en carry the same key set).
+    const inGroup = (gid, ...labels) => {
       const g = groupInfo.groups.find(x => x.id === gid);
-      return g ? g.labels.some(t => t.includes(label)) : false;
+      return g ? g.labels.some(t => labels.some(l => t.includes(l))) : false;
     };
-    check(inGroup('nav', '活跃会话 Tab Bar') && inGroup('nav', '切换会话不拉键盘'), 'nav group holds tab bar & switch behaviors');
-    check(inGroup('ime', '输入法/键盘适配') && inGroup('ime', '隐藏权限选择下拉'), 'ime group holds keyboard features');
-    check(inGroup('touch', '按钮触摸反馈') && inGroup('touch', '禁用触摸长按拖拽'), 'touch group holds touch features');
-    check(inGroup('display', '设置页记忆页签') && inGroup('display', '代码块/表格内滚'), 'display group holds settings-page & reading features');
+    check(inGroup('nav', '活跃会话 Tab Bar', 'Active-session tab bar') && inGroup('nav', '切换会话不拉键盘', 'No keyboard on session switch'), 'nav group holds tab bar & switch behaviors');
+    check(inGroup('ime', '输入法/键盘适配', 'IME / keyboard adaptation') && inGroup('ime', '隐藏权限选择下拉', 'Hide permission dropdown'), 'ime group holds keyboard features');
+    check(inGroup('touch', '按钮触摸反馈', 'Touch feedback on buttons') && inGroup('touch', '禁用触摸长按拖拽', 'Disable touch long-press drag'), 'touch group holds touch features');
+    check(inGroup('display', '设置页记忆页签', 'Remember last settings tab') && inGroup('display', '代码块/表格内滚', 'Code block and table inner scroll'), 'display group holds settings-page & reading features');
 
     // 4.2 折叠/展开交互：点击「触摸与反馈」标题 → 行隐藏且状态落盘；再点 → 恢复
     console.log('Testing group collapse/expand...');
     const clickTouchHeader = `(function(){
-      const header = [...document.querySelectorAll('.dsh-qol-group-header')].find(h => (h.querySelector('.dsh-qol-group-label') || {}).textContent === '触摸与反馈');
+      const header = [...document.querySelectorAll('.dsh-qol-group-header')].find(h => {
+        const label = (h.querySelector('.dsh-qol-group-label') || {}).textContent || '';
+        return label === '触摸与反馈' || label === 'Touch and feedback';
+      });
       if (header) header.click();
       return !!header;
     })()`;
@@ -212,7 +217,7 @@ try {
 
     const rememberRow = await page.evaluate(() => {
       const rows = [...document.querySelectorAll('.dsh-qol-row')];
-      const row = rows.find(r => r.textContent.includes('设置页记忆页签'));
+      const row = rows.find(r => /设置页记忆页签|Remember last settings tab/.test(r.textContent || ''));
       if (!row) return { found: false };
       return { found: true, checked: row.getAttribute('data-checked') };
     });
@@ -222,7 +227,7 @@ try {
     // 开启「设置页记忆页签」
     await page.evaluate(() => {
       const rows = [...document.querySelectorAll('.dsh-qol-row')];
-      const row = rows.find(r => r.textContent.includes('设置页记忆页签'));
+      const row = rows.find(r => /设置页记忆页签|Remember last settings tab/.test(r.textContent || ''));
       if (row && row.getAttribute('data-checked') === 'false') {
         const sw = row.querySelector('.dsh-qol-switch');
         if (sw) sw.click();

@@ -282,7 +282,8 @@ try {
   const setPinToggle = async (on) => {
     const found = await page.evaluate((want) => {
       const rows = [...document.querySelectorAll('.dsh-qol-row')];
-      const row = rows.find(r => (r.textContent || '').includes('工作区菜单置顶'));
+      // The panel follows the host locale; accept either dictionary.
+      const row = rows.find(r => /工作区菜单置顶|Pin workspace to top/.test(r.textContent || ''));
       if (!row) return false;
       const sw = row.querySelector('.dsh-qol-switch');
       const checked = sw.getAttribute('aria-checked') === 'true';
@@ -295,7 +296,7 @@ try {
 
   await openSettings();
   const foundRow = await setPinToggle(false);
-  check(foundRow, 'settings row 工作区菜单置顶 found');
+  check(foundRow, 'settings row (workspace pin) found');
   await page.keyboard.press('Escape');
   await page.waitForTimeout(500);
   const attrOff = await page.evaluate(() => !document.documentElement.hasAttribute('data-qol-workspace-pin'));
