@@ -92,6 +92,7 @@ The implementation is an **attribute total-gate**: every feature maps to an `htm
 - **Zero desktop impact**: all mobile-specific rules are locked inside `@media (max-width: 768px)`; cross-platform features (tab bar, status animation) behave the same on both
 - **Never changes element sizes/fonts**: a deliberate design constraint (touch feedback and IME adaptation only touch behavior/compositor layers)
 - **Degrades, never blocks**: every host-service lookup is wrapped in `ctx.get()` + try/catch; a missing service only logs a `console.warn`; if a structure-anchor selector stops matching after a host redesign, the matching rules silently stop applying and the page is unaffected
+- **Localized copy**: every user-visible string lives in one dictionary (`DICT` in `lib/client.js`) and follows the host locale through `@deepseek-ai/dsh-client-locale` (Settings → General → Language, built-in zh / en); switching applies live without a reload, and a host without the locale service falls back to `<html lang>` / `navigator.language`
 - **Coexists with dsh-web-mobile-fix** (see below)
 - **Tested baseline**: current dsh stable (0.1.x) web profile + Chromium/Firefox engine mobile emulation; real-device (iOS Safari / Android Chrome) touch feel and IME details are worth a manual pass
 

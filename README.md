@@ -92,6 +92,7 @@ dsh plugin --profile web add github:john-walks-slow/dsh-qol
 - **桌面零影响**：移动专属规则全部锁在 `@media (max-width: 768px)`；跨端功能（Tab Bar、状态动画）两端统一体验
 - **不改元素尺寸/字号**：有意设计约束（触摸反馈与 IME 适配均只动行为/合成层）
 - **降级不阻断**：所有宿主服务取值 `ctx.get()` + try/catch，服务缺失只 `console.warn` 降级；结构锚选择器若随宿主改版失配，对应规则静默不生效，页面不受影响
+- **文案跟随宿主语言**：所有界面文案集中在同一份字典（`lib/client.js` 的 `DICT`），跟随宿主的 `@deepseek-ai/dsh-client-locale`（设置 → 通用 → 语言，内置简体中文 / English），切换即时生效、无需刷新；未提供该服务的旧版宿主回退到 `<html lang>` / `navigator.language`
 - **与 dsh-web-mobile-fix 可共存**（见下）
 - **实测基线**：当前 dsh 稳定版（0.1.x）web profile + Chromium/Firefox 内核移动模拟；真机（iOS Safari / Android Chrome）的触摸手感与 IME 细节建议按需人工确认
 

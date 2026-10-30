@@ -500,7 +500,7 @@ try {
   await openSettings();
   await page.evaluate(() => {
     const rows = [...document.querySelectorAll('.dsh-qol-row')];
-    const row = rows.find(r => r.textContent.includes('活跃会话 Tab Bar'));
+    const row = rows.find(r => /活跃会话 Tab Bar|Active-session tab bar/.test(r.textContent || ''));
     row.querySelector('.dsh-qol-switch').click();
   });
   await page.waitForTimeout(600);
@@ -516,7 +516,7 @@ try {
 
   await page.evaluate(() => {
     const rows = [...document.querySelectorAll('.dsh-qol-row')];
-    const row = rows.find(r => r.textContent.includes('活跃会话 Tab Bar'));
+    const row = rows.find(r => /活跃会话 Tab Bar|Active-session tab bar/.test(r.textContent || ''));
     row.querySelector('.dsh-qol-switch').click();
   });
   await page.waitForTimeout(600);
