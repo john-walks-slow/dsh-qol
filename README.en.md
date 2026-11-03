@@ -32,7 +32,6 @@ All toggles in **Settings → QoL** are organized into 4 groups (click a group h
 |---|---|---|
 | IME/keyboard adaptation | viewport meta (`viewport-fit=cover` + `interactive-widget=resizes-content`), a `100dvh` height chain, composer safe area, iOS `visualViewport` CSS-variable fallback (**never changes element sizes/fonts**) | On |
 | Enter inserts newline | Enter in the input box inserts a newline instead of sending; send with Ctrl/⌘+Enter (steer/queue while the agent runs), Shift+Enter still inserts a newline; IME candidate confirmation and the @ menu are unaffected | Off |
-| No dictation auto-send | A long voice dictation ends with the IME handing over one extra Enter, which sends the message the instant you stop talking — and sends only the last fragment. This toggle holds that one Enter back; manual send and Ctrl/⌘+Enter are unaffected | On |
 | Hide permission dropdown | Hides the permission (Access mode) dropdown trigger inside the input box to save horizontal space; model selection and context usage are unaffected | On |
 
 ### Touch & feedback
